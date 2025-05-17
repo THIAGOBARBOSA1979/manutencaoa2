@@ -19,8 +19,17 @@ import ClientInspections from "./pages/client/Inspections";
 import ClientWarranty from "./pages/client/Warranty";
 import ClientProperties from "./pages/client/Properties";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 
-const queryClient = new QueryClient();
+// Create a client for React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -29,6 +38,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Admin Routes */}
           <Route path="/" element={<AppLayout><Index /></AppLayout>} />
           <Route path="/properties" element={<AppLayout><Properties /></AppLayout>} />
           <Route path="/inspections" element={<AppLayout><Inspections /></AppLayout>} />

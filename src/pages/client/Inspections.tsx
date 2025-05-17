@@ -213,7 +213,7 @@ const ClientInspections = () => {
                               <tr key={item.id}>
                                 <td className="py-3 px-4">{item.name}</td>
                                 <td className="py-3 px-4 text-right">
-                                  <Badge status={item.completed ? "complete" : "pending"} />
+                                  <Badge status={item.completed} />
                                 </td>
                               </tr>
                             ))}
