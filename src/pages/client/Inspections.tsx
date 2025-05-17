@@ -1,11 +1,13 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar, ClipboardCheck, User, MapPin, List, CheckCircle, Clock } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Calendar, ClipboardCheck, User, MapPin, List, CheckCircle, Clock, FileText } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
+import { StartInspectionDialog } from "@/components/Inspection/StartInspectionDialog";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data
 const inspections = [
@@ -24,7 +26,8 @@ const inspections = [
       { id: "3", name: "Teste de instalações hidráulicas", completed: false },
       { id: "4", name: "Verificação de esquadrias e vidros", completed: false },
       { id: "5", name: "Verificação de pisos e revestimentos", completed: false },
-    ]
+    ],
+    canStart: true
   },
   {
     id: "2",
@@ -41,16 +44,81 @@ const inspections = [
       { id: "3", name: "Demonstração de funcionamento de equipamentos", completed: false },
       { id: "4", name: "Entrega de manuais e garantias", completed: false },
       { id: "5", name: "Assinatura de termo de recebimento", completed: false },
-    ]
+    ],
+    canStart: false
+  },
+  {
+    id: "3",
+    title: "Vistoria de Reparo",
+    property: "Edifício Aurora",
+    unit: "204",
+    scheduledDate: new Date(2025, 3, 10, 9, 0),
+    status: "complete" as const,
+    inspector: "Roberto Santos",
+    description: "Vistoria para verificar a correção dos itens identificados na vistoria anterior.",
+    checklist: [
+      { id: "1", name: "Verificação do reparo da infiltração no banheiro", completed: true },
+      { id: "2", name: "Verificação do reparo da maçaneta da porta", completed: true },
+    ],
+    canStart: false,
+    report: "https://example.com/report.pdf"
   }
 ];
 
+// Helper component for the checklist status badges
+const Badge = ({ status }: { status: boolean }) => {
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+      status 
+        ? "bg-green-100 text-green-800" 
+        : "bg-amber-100 text-amber-800"
+    }`}>
+      {status ? "Concluído" : "Pendente"}
+    </span>
+  );
+};
+
 const ClientInspections = () => {
   const [selectedInspection, setSelectedInspection] = useState<string | null>(null);
+  const [startInspectionOpen, setStartInspectionOpen] = useState(false);
+  const [activeInspection, setActiveInspection] = useState<string | null>(null);
+  const { toast } = useToast();
   
   const inspection = selectedInspection 
     ? inspections.find(i => i.id === selectedInspection) 
     : null;
+
+  const handleStartInspection = (inspectionId: string) => {
+    setActiveInspection(inspectionId);
+    setStartInspectionOpen(true);
+  };
+
+  const handleInspectionComplete = (data: any) => {
+    console.log("Inspection completed:", data);
+    
+    // Update the inspection status (in a real app, this would update state or refresh data)
+    toast({
+      title: "Vistoria concluída com sucesso",
+      description: "O relatório será processado e estará disponível em breve.",
+    });
+    
+    // In a real app, you would refresh the data or update the state
+    setStartInspectionOpen(false);
+  };
+
+  const handleConfirmPresence = () => {
+    toast({
+      title: "Presença confirmada",
+      description: "Obrigado por confirmar sua presença na vistoria.",
+    });
+  };
+
+  const handleRequestReschedule = () => {
+    toast({
+      title: "Solicitação de remarcação enviada",
+      description: "Em breve entraremos em contato para agendar uma nova data.",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -121,6 +189,9 @@ const ClientInspections = () => {
               <TabsList>
                 <TabsTrigger value="details">Detalhes</TabsTrigger>
                 <TabsTrigger value="checklist">Checklist</TabsTrigger>
+                {inspection.status === "complete" && (
+                  <TabsTrigger value="report">Relatório</TabsTrigger>
+                )}
               </TabsList>
               
               <TabsContent value="details" className="space-y-4 pt-4">
@@ -179,12 +250,28 @@ const ClientInspections = () => {
                     </div>
                     
                     <div className="flex justify-between pt-4">
-                      <Button variant="outline">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleRequestReschedule}
+                      >
                         Solicitar remarcação
                       </Button>
-                      <Button>
-                        Confirmar presença
-                      </Button>
+                      
+                      {inspection.canStart ? (
+                        <Button 
+                          onClick={() => handleStartInspection(inspection.id)}
+                        >
+                          <ClipboardCheck className="h-4 w-4 mr-2" />
+                          Iniciar Vistoria
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={handleConfirmPresence}
+                          disabled={inspection.status === "complete"}
+                        >
+                          {inspection.status === "complete" ? "Vistoria Concluída" : "Confirmar presença"}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -227,6 +314,48 @@ const ClientInspections = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+              
+              {inspection.status === "complete" && (
+                <TabsContent value="report" className="space-y-4 pt-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Relatório de Vistoria</CardTitle>
+                      <CardDescription>
+                        Documentação completa com os resultados da vistoria
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="border rounded-md p-4 space-y-2">
+                        <div className="flex items-start">
+                          <FileText className="h-10 w-10 text-primary mr-3 mt-1" />
+                          <div>
+                            <h3 className="font-medium">Relatório de Vistoria - {inspection.title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Finalizado em {format(new Date(2025, 3, 10), "dd/MM/yyyy")}
+                            </p>
+                            <div className="mt-2">
+                              <Button variant="outline" size="sm">
+                                Visualizar PDF
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="border rounded-md p-4">
+                        <h3 className="font-medium mb-2">Resumo</h3>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="font-medium">Vistoria realizada por:</span> {inspection.inspector}</p>
+                          <p><span className="font-medium">Data da vistoria:</span> {format(inspection.scheduledDate, "dd/MM/yyyy")}</p>
+                          <p><span className="font-medium">Total de itens verificados:</span> {inspection.checklist.length}</p>
+                          <p><span className="font-medium">Itens conformes:</span> {inspection.checklist.filter(i => i.completed).length}</p>
+                          <p><span className="font-medium">Itens não conformes:</span> {inspection.checklist.filter(i => !i.completed).length}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
             </Tabs>
           ) : (
             <Card className="h-full flex flex-col justify-center items-center py-12">
@@ -239,20 +368,18 @@ const ClientInspections = () => {
           )}
         </div>
       </div>
+      
+      {/* Start Inspection Dialog */}
+      {activeInspection && (
+        <StartInspectionDialog
+          open={startInspectionOpen}
+          onOpenChange={setStartInspectionOpen}
+          inspectionId={activeInspection}
+          inspectionTitle={inspections.find(i => i.id === activeInspection)?.title || "Vistoria"}
+          onComplete={handleInspectionComplete}
+        />
+      )}
     </div>
-  );
-};
-
-// Helper component for the checklist status badges
-const Badge = ({ status }: { status: boolean }) => {
-  return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-      status 
-        ? "bg-green-100 text-green-800" 
-        : "bg-amber-100 text-amber-800"
-    }`}>
-      {status ? "Concluído" : "Pendente"}
-    </span>
   );
 };
 

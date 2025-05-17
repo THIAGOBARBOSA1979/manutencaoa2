@@ -1,8 +1,17 @@
 
 import { format } from "date-fns";
-import { Calendar, User, MapPin } from "lucide-react";
+import { Calendar, User, MapPin, Eye, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "../shared/StatusBadge";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+import { ScheduleInspectionDialog } from "./ScheduleInspectionDialog";
 
 interface InspectionItemProps {
   inspection: {
@@ -16,8 +25,23 @@ interface InspectionItemProps {
 }
 
 export const InspectionItem = ({ inspection }: InspectionItemProps) => {
+  const navigate = useNavigate();
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  
+  const handleViewDetails = () => {
+    // In a real application, this would navigate to a details page
+    console.log(`View details for inspection ${inspection.id}`);
+    // navigate(`/inspections/${inspection.id}`);
+  };
+  
+  const propertyInfo = {
+    property: inspection.property,
+    unit: inspection.unit,
+    client: inspection.client
+  };
+
   return (
-    <div className="bg-white p-4 rounded-lg shadow border border-slate-100 flex flex-col md:flex-row gap-4 md:items-center justify-between card-hover">
+    <div className="bg-white p-4 rounded-lg shadow border border-slate-100 flex flex-col md:flex-row gap-4 md:items-center justify-between hover:border-primary/30 transition-colors">
       <div className="space-y-2">
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <MapPin size={14} />
@@ -35,8 +59,43 @@ export const InspectionItem = ({ inspection }: InspectionItemProps) => {
       
       <div className="flex gap-3 items-center">
         <StatusBadge status={inspection.status} />
-        <Button variant="outline" size="sm">Ver detalhes</Button>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handleViewDetails}
+        >
+          <Eye className="h-4 w-4 mr-2" /> 
+          Detalhes
+        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setRescheduleDialogOpen(true)}>
+              Reagendar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => console.log("Cancel inspection")}>
+              Cancelar vistoria
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => console.log("Send reminder")}>
+              Enviar lembrete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+      
+      {/* Reschedule Dialog */}
+      {rescheduleDialogOpen && (
+        <ScheduleInspectionDialog
+          triggerButton={<div style={{ display: 'none' }}></div>}
+          propertyInfo={propertyInfo}
+        />
+      )}
     </div>
   );
 };

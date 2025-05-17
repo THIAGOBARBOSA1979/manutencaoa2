@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   ClipboardCheck, 
-  Plus, 
   Search, 
   Filter, 
   Calendar as CalendarIcon
@@ -17,6 +16,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScheduleInspectionDialog } from "@/components/Inspection/ScheduleInspectionDialog";
+import { useState } from "react";
 
 // Mock data
 const inspections = [
@@ -71,6 +72,31 @@ const inspections = [
 ];
 
 const Inspections = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProperty, setSelectedProperty] = useState("all");
+  
+  // Filter function
+  const filterInspections = (inspectionList: typeof inspections, status?: string) => {
+    return inspectionList.filter(inspection => {
+      // Filter by search term
+      const searchMatch = 
+        inspection.client.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        inspection.property.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inspection.unit.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Filter by property
+      const propertyMatch = selectedProperty === "all" || 
+        (selectedProperty === "aurora" && inspection.property.includes("Aurora")) ||
+        (selectedProperty === "bosque" && inspection.property.includes("Bosque")) ||
+        (selectedProperty === "monte" && inspection.property.includes("Monte"));
+      
+      // Filter by status if specified
+      const statusMatch = !status || inspection.status === status;
+      
+      return searchMatch && propertyMatch && statusMatch;
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -89,10 +115,7 @@ const Inspections = () => {
             <CalendarIcon className="mr-2 h-4 w-4" />
             Ver Calendário
           </Button>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Agendar Vistoria
-          </Button>
+          <ScheduleInspectionDialog />
         </div>
       </div>
 
@@ -113,11 +136,22 @@ const Inspections = () => {
               <Input
                 placeholder="Buscar vistorias..."
                 className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Select defaultValue="all">
+            <Select 
+              defaultValue="all"
+              onValueChange={setSelectedProperty}
+              value={selectedProperty}
+            >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Empreendimento" />
+                <SelectValue>
+                  {selectedProperty === "all" ? "Todos" : 
+                   selectedProperty === "aurora" ? "Edifício Aurora" :
+                   selectedProperty === "bosque" ? "Residencial Bosque Verde" :
+                   "Condomínio Monte Azul"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
@@ -134,39 +168,57 @@ const Inspections = () => {
 
           {/* Inspections list */}
           <div className="space-y-4">
-            {inspections
-              .filter(i => i.status === "pending")
-              .map((inspection) => (
-                <InspectionItem key={inspection.id} inspection={inspection} />
-              ))}
+            {filterInspections(inspections, "pending").map((inspection) => (
+              <InspectionItem key={inspection.id} inspection={inspection} />
+            ))}
+            
+            {filterInspections(inspections, "pending").length === 0 && (
+              <div className="text-center py-10 text-muted-foreground">
+                Nenhuma vistoria encontrada.
+              </div>
+            )}
           </div>
         </TabsContent>
         
         <TabsContent value="in-progress" className="space-y-4 pt-4">
           <div className="space-y-4">
-            {inspections
-              .filter(i => i.status === "progress")
-              .map((inspection) => (
-                <InspectionItem key={inspection.id} inspection={inspection} />
-              ))}
+            {filterInspections(inspections, "progress").map((inspection) => (
+              <InspectionItem key={inspection.id} inspection={inspection} />
+            ))}
+            
+            {filterInspections(inspections, "progress").length === 0 && (
+              <div className="text-center py-10 text-muted-foreground">
+                Nenhuma vistoria em andamento.
+              </div>
+            )}
           </div>
         </TabsContent>
         
         <TabsContent value="completed" className="space-y-4 pt-4">
           <div className="space-y-4">
-            {inspections
-              .filter(i => i.status === "complete")
-              .map((inspection) => (
-                <InspectionItem key={inspection.id} inspection={inspection} />
-              ))}
+            {filterInspections(inspections, "complete").map((inspection) => (
+              <InspectionItem key={inspection.id} inspection={inspection} />
+            ))}
+            
+            {filterInspections(inspections, "complete").length === 0 && (
+              <div className="text-center py-10 text-muted-foreground">
+                Nenhuma vistoria concluída.
+              </div>
+            )}
           </div>
         </TabsContent>
         
         <TabsContent value="all" className="space-y-4 pt-4">
           <div className="space-y-4">
-            {inspections.map((inspection) => (
+            {filterInspections(inspections).map((inspection) => (
               <InspectionItem key={inspection.id} inspection={inspection} />
             ))}
+            
+            {filterInspections(inspections).length === 0 && (
+              <div className="text-center py-10 text-muted-foreground">
+                Nenhuma vistoria encontrada.
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
