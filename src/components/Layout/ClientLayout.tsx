@@ -14,12 +14,14 @@ const ClientNavLink = ({
   to,
   icon: Icon,
   children,
-  badgeCount
+  badgeCount,
+  ...props
 }: {
   to: string;
   icon: React.ElementType;
   children: React.ReactNode;
   badgeCount?: number;
+  [key: string]: any;
 }) => {
   return (
     <NavLink
@@ -30,6 +32,7 @@ const ClientNavLink = ({
           ? "bg-primary/90 text-primary-foreground font-medium"
           : "hover:bg-primary/10 text-foreground/80 hover:text-foreground"
       )}
+      {...props}
     >
       <div className="flex items-center gap-3">
         <Icon size={18} />

@@ -378,7 +378,7 @@ const Settings = () => {
                   <Label htmlFor="password-policy">Política de Senhas</Label>
                   <Select defaultValue="strong">
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma política" />
+                      <SelectValue>Forte (letras maiúsculas, minúsculas, números e símbolos)</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="basic">Básica (mínimo 8 caracteres)</SelectItem>
