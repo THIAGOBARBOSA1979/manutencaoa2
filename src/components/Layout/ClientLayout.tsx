@@ -1,4 +1,3 @@
-
 import { Outlet, Link, NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -9,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-
 const ClientNavLink = ({
   to,
   icon: Icon,
@@ -23,55 +21,37 @@ const ClientNavLink = ({
   badgeCount?: number;
   [key: string]: any;
 }) => {
-  return (
-    <NavLink
-      to={to}
-      className={({ isActive }) => cn(
-        "flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-colors",
-        isActive
-          ? "bg-primary/90 text-primary-foreground font-medium"
-          : "hover:bg-primary/10 text-foreground/80 hover:text-foreground"
-      )}
-      {...props}
-    >
+  return <NavLink to={to} className={({
+    isActive
+  }) => cn("flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-colors", isActive ? "bg-primary/90 text-primary-foreground font-medium" : "hover:bg-primary/10 text-foreground/80 hover:text-foreground")} {...props}>
       <div className="flex items-center gap-3">
         <Icon size={18} />
         <span>{children}</span>
       </div>
-      {typeof badgeCount === 'number' && badgeCount > 0 && (
-        <Badge variant="secondary" className="ml-auto">{badgeCount}</Badge>
-      )}
-    </NavLink>
-  );
+      {typeof badgeCount === 'number' && badgeCount > 0 && <Badge variant="secondary" className="ml-auto">{badgeCount}</Badge>}
+    </NavLink>;
 };
-
 const NotificationPanel = () => {
-  const notifications = [
-    {
-      id: "1",
-      title: "Agendamento confirmado",
-      message: "Sua vistoria de entrega foi confirmada para 20/05/2025 às 14:30",
-      date: "Há 2 horas",
-      read: false
-    },
-    {
-      id: "2",
-      title: "Solicitação de garantia atualizada",
-      message: "O status da sua solicitação foi atualizado para 'Em andamento'",
-      date: "Há 1 dia",
-      read: true
-    },
-    {
-      id: "3",
-      title: "Lembrete de vistoria",
-      message: "Sua vistoria de pré-entrega está agendada para amanhã às 10:00",
-      date: "Há 2 dias",
-      read: true
-    }
-  ];
-  
-  return (
-    <div className="w-[380px] max-h-[60vh] flex flex-col">
+  const notifications = [{
+    id: "1",
+    title: "Agendamento confirmado",
+    message: "Sua vistoria de entrega foi confirmada para 20/05/2025 às 14:30",
+    date: "Há 2 horas",
+    read: false
+  }, {
+    id: "2",
+    title: "Solicitação de garantia atualizada",
+    message: "O status da sua solicitação foi atualizado para 'Em andamento'",
+    date: "Há 1 dia",
+    read: true
+  }, {
+    id: "3",
+    title: "Lembrete de vistoria",
+    message: "Sua vistoria de pré-entrega está agendada para amanhã às 10:00",
+    date: "Há 2 dias",
+    read: true
+  }];
+  return <div className="w-[380px] max-h-[60vh] flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">
         <h3 className="font-medium text-lg">Notificações</h3>
         <Button variant="ghost" size="sm" className="text-xs">
@@ -80,16 +60,8 @@ const NotificationPanel = () => {
       </div>
       
       <div className="flex-1 overflow-auto">
-        {notifications.length > 0 ? (
-          <div className="divide-y">
-            {notifications.map(notification => (
-              <div 
-                key={notification.id} 
-                className={cn(
-                  "p-4 hover:bg-muted/50 cursor-pointer",
-                  !notification.read && "bg-primary/5 border-l-2 border-primary"
-                )}
-              >
+        {notifications.length > 0 ? <div className="divide-y">
+            {notifications.map(notification => <div key={notification.id} className={cn("p-4 hover:bg-muted/50 cursor-pointer", !notification.read && "bg-primary/5 border-l-2 border-primary")}>
                 <div className="flex items-start justify-between">
                   <h4 className={cn("font-medium", !notification.read && "text-primary")}>
                     {notification.title}
@@ -97,15 +69,11 @@ const NotificationPanel = () => {
                   <span className="text-xs text-muted-foreground">{notification.date}</span>
                 </div>
                 <p className="text-sm mt-1 text-muted-foreground">{notification.message}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center p-8 text-center">
+              </div>)}
+          </div> : <div className="flex flex-col items-center justify-center p-8 text-center">
             <Bell className="h-10 w-10 text-muted-foreground/30 mb-3" />
             <p className="text-muted-foreground">Você não tem notificações</p>
-          </div>
-        )}
+          </div>}
       </div>
       
       <div className="p-3 border-t">
@@ -113,25 +81,22 @@ const NotificationPanel = () => {
           Ver todas notificações
         </Button>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 const ChatSupportPanel = () => {
   const [message, setMessage] = useState("");
-  const { toast } = useToast();
-  
+  const {
+    toast
+  } = useToast();
   const handleSend = () => {
     if (message.trim()) {
       toast({
-        description: "Mensagem enviada com sucesso",
+        description: "Mensagem enviada com sucesso"
       });
       setMessage("");
     }
   };
-  
-  return (
-    <div className="w-[380px] h-[500px] flex flex-col">
+  return <div className="w-[380px] h-[500px] flex flex-col">
       <div className="flex items-center gap-3 p-4 border-b">
         <Avatar className="h-9 w-9">
           <AvatarImage src="/placeholder.svg" alt="Suporte" />
@@ -168,23 +133,20 @@ const ChatSupportPanel = () => {
       
       <div className="p-3 border-t">
         <div className="flex gap-2">
-          <Input 
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Digite sua mensagem..." 
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          />
+          <Input value={message} onChange={e => setMessage(e.target.value)} placeholder="Digite sua mensagem..." onKeyPress={e => e.key === 'Enter' && handleSend()} />
           <Button onClick={handleSend} type="button">Enviar</Button>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
 
 // Helper component for the mobile header
-const MobileHeader = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
-  return (
-    <div className="flex items-center justify-between h-16 px-4 border-b md:hidden">
+const MobileHeader = ({
+  onToggleSidebar
+}: {
+  onToggleSidebar: () => void;
+}) => {
+  return <div className="flex items-center justify-between h-16 px-4 border-b md:hidden">
       <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
         <Menu size={20} />
       </Button>
@@ -195,60 +157,44 @@ const MobileHeader = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
         <span className="text-lg font-semibold">Portal do Cliente</span>
       </div>
       <div className="w-8"></div> {/* Spacer for centering */}
-    </div>
-  );
+    </div>;
 };
 
 // Input component
-const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => {
-  return (
-    <input
-      className={cn(
-        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      {...props}
-    />
-  );
+const Input = ({
+  className,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement>) => {
+  return <input className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50", className)} {...props} />;
 };
-
 const ClientLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Check if the screen is mobile size
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    
     return () => {
       window.removeEventListener("resize", checkMobile);
     };
   }, []);
-  
+
   // Close the sidebar when a link is clicked on mobile
   const handleLinkClick = () => {
     if (isMobile) {
       setSidebarOpen(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Mobile header */}
       <MobileHeader onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       
       {/* Sidebar for desktop and mobile */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out md:translate-x-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
+      <div className={cn("fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out md:translate-x-0", sidebarOpen ? "translate-x-0" : "-translate-x-full")}>
         {/* Sidebar header */}
         <div className="h-16 flex items-center justify-between px-4 border-b">
           <Link to="/client" className="flex items-center gap-2" onClick={handleLinkClick}>
@@ -271,7 +217,7 @@ const ClientLayout = () => {
             </Avatar>
             <div>
               <p className="font-medium">Maria Oliveira</p>
-              <p className="text-xs text-muted-foreground">Edifício Aurora - Unidade 204</p>
+              <p className="text-xs text-muted-foreground">Bela Vista- Unidade 204</p>
             </div>
           </div>
         </div>
@@ -315,12 +261,7 @@ const ClientLayout = () => {
       </div>
       
       {/* Backdrop overlay for mobile */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/20 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />}
       
       {/* Main content */}
       <div className="md:ml-64 min-h-screen flex flex-col">
@@ -380,8 +321,6 @@ const ClientLayout = () => {
           &copy; 2025 A2 Incorporadora. Todos os direitos reservados.
         </footer>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default ClientLayout;
