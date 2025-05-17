@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for our property management system
+				company: {
+					DEFAULT: '#1E40AF', // Deep blue for primary brand color
+					light: '#DBEAFE',
+					dark: '#1E3A8A',
+				},
+				status: {
+					pending: '#FCD34D',   // Amber for pending status
+					progress: '#60A5FA', // Blue for in progress
+					complete: '#34D399', // Green for completed
+					critical: '#F87171', // Red for critical issues
 				}
 			},
 			borderRadius: {
