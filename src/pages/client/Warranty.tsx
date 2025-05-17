@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Plus, MessageSquare, Calendar, AlertTriangle, Clock, ArrowRight } from "lucide-react";
@@ -19,6 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { WarrantyProblemItem, WarrantyProblem } from "@/components/Warranty/WarrantyProblemItem";
+import { useToast } from "@/components/ui/use-toast";
+import { v4 as uuidv4 } from 'uuid';
 
 // Mock data
 const warrantyClaims = [
@@ -96,7 +98,7 @@ const WarrantyGuide = () => (
         <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
           <li>Danos causados por uso inadequado</li>
           <li>Desgaste natural dos materiais</li>
-          <li>Modificações feitas pelo proprietário</li>
+          <li>Modificaç��es feitas pelo proprietário</li>
           <li>Manutenção inadequada</li>
         </ul>
       </div>
@@ -159,10 +161,102 @@ const WarrantyStatus = ({ status }: { status: "pending" | "progress" | "complete
 
 const ClientWarranty = () => {
   const [selectedClaim, setSelectedClaim] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [problems, setProblems] = useState<WarrantyProblem[]>([
+    {
+      id: uuidv4(),
+      category: "",
+      location: "",
+      description: "",
+      severity: "moderate",
+      photos: []
+    }
+  ]);
+  const { toast } = useToast();
   
   const claim = selectedClaim 
     ? warrantyClaims.find(c => c.id === selectedClaim) 
     : null;
+
+  // Handle change in problem fields
+  const handleProblemChange = (index: number, field: keyof WarrantyProblem, value: any) => {
+    const updatedProblems = [...problems];
+    updatedProblems[index] = {
+      ...updatedProblems[index],
+      [field]: value
+    };
+    setProblems(updatedProblems);
+  };
+
+  // Add a new problem
+  const addProblem = () => {
+    setProblems([
+      ...problems,
+      {
+        id: uuidv4(),
+        category: "",
+        location: "",
+        description: "",
+        severity: "moderate",
+        photos: []
+      }
+    ]);
+  };
+
+  // Remove a problem
+  const removeProblem = (index: number) => {
+    const updatedProblems = [...problems];
+    updatedProblems.splice(index, 1);
+    setProblems(updatedProblems);
+  };
+
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!title.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, informe um título para a solicitação",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Validate each problem
+    for (const [index, problem] of problems.entries()) {
+      if (!problem.category || !problem.location || !problem.description) {
+        toast({
+          title: "Erro",
+          description: `Por favor, preencha todos os campos obrigatórios do problema ${index + 1}`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
+    // Submit form
+    toast({
+      title: "Solicitação enviada",
+      description: "Sua solicitação de garantia foi enviada com sucesso."
+    });
+    
+    // Reset form and close dialog
+    setTitle("");
+    setProblems([
+      {
+        id: uuidv4(),
+        category: "",
+        location: "",
+        description: "",
+        severity: "moderate",
+        photos: []
+      }
+    ]);
+    setIsDialogOpen(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -177,58 +271,65 @@ const ClientWarranty = () => {
             Gerencie solicitações de garantia do seu imóvel
           </p>
         </div>
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               Nova Solicitação
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Nova Solicitação de Garantia</DialogTitle>
               <DialogDescription>
                 Preencha os detalhes da sua solicitação para que possamos analisar e atender da melhor forma.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            
+            <form onSubmit={handleSubmit} className="py-4 space-y-6">
               <div className="grid gap-2">
-                <Label htmlFor="title">Título da solicitação</Label>
-                <Input id="title" placeholder="Ex: Infiltração no banheiro social" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category">Categoria</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map(category => (
-                      <SelectItem key={category} value={category}>{category}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">Descrição detalhada</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Descreva o problema com o máximo de detalhes, incluindo quando foi percebido, local exato, etc."
-                  rows={4}
+                <Label htmlFor="title">Título da solicitação <span className="text-destructive">*</span></Label>
+                <Input 
+                  id="title" 
+                  placeholder="Ex: Problemas no apartamento 204" 
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="photo">Adicionar fotos (opcional)</Label>
-                <Input id="photo" type="file" accept="image/*" />
-                <p className="text-sm text-muted-foreground">
-                  Adicione fotos que mostrem claramente o problema para facilitar a análise.
-                </p>
+              
+              <div className="space-y-4">
+                <h3 className="font-medium">Problemas Reportados</h3>
+                
+                {problems.map((problem, index) => (
+                  <WarrantyProblemItem
+                    key={problem.id}
+                    index={index}
+                    problem={problem}
+                    onChange={handleProblemChange}
+                    onRemove={removeProblem}
+                  />
+                ))}
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addProblem}
+                  className="w-full"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar outro problema
+                </Button>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline">Cancelar</Button>
-              <Button>Enviar solicitação</Button>
-            </DialogFooter>
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">
+                  Enviar solicitação
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -368,12 +469,10 @@ const ClientWarranty = () => {
                     <div className="space-y-4">
                       {claim.updates.map((update, index) => (
                         <div key={update.id} className="relative pl-6 pb-4">
-                          {/* Timeline connector */}
                           {index < claim.updates.length - 1 && (
                             <div className="absolute top-6 bottom-0 left-3 w-px bg-border -translate-x-1/2" />
                           )}
                           
-                          {/* Timeline dot */}
                           <div className="absolute top-1 left-0 w-5 h-5 rounded-full border-2 border-primary bg-background" />
                           
                           <div className="space-y-1">
@@ -391,7 +490,6 @@ const ClientWarranty = () => {
                       ))}
                     </div>
                     
-                    {/* Add comment section */}
                     <div className="mt-6 pt-4 border-t">
                       <h3 className="font-medium mb-2">Adicionar comentário</h3>
                       <div className="space-y-3">
@@ -415,17 +513,13 @@ const ClientWarranty = () => {
               <p className="text-muted-foreground max-w-md text-center mt-1">
                 Selecione uma solicitação na lista ao lado ou crie uma nova solicitação de garantia para seu imóvel.
               </p>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="mt-4">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nova Solicitação
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  {/* Same dialog content as above */}
-                </DialogContent>
-              </Dialog>
+              <Button 
+                className="mt-4"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Solicitação
+              </Button>
             </Card>
           )}
         </div>
