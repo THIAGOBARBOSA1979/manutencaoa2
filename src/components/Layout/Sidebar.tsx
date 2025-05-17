@@ -1,10 +1,13 @@
+
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Home, Building, ClipboardCheck, ShieldCheck, Settings, Menu, X, Users, Calendar } from "lucide-react";
+import { Home, Building, ClipboardCheck, ShieldCheck, Settings, Menu, X, Users, Calendar, User } from "lucide-react";
+
 interface SidebarProps {
   className?: string;
 }
+
 const SidebarLink = ({
   to,
   icon: Icon,
@@ -23,10 +26,12 @@ const SidebarLink = ({
       <span>{children}</span>
     </NavLink>;
 };
+
 export const Sidebar = ({
   className
 }: SidebarProps) => {
   const [isOpen, setIsOpen] = useState(true);
+  
   return <>
       {/* Mobile sidebar toggle button */}
       <button className="fixed right-4 top-4 z-50 rounded-full p-2 bg-primary text-primary-foreground shadow-md lg:hidden" onClick={() => setIsOpen(!isOpen)}>
@@ -48,6 +53,7 @@ export const Sidebar = ({
           <SidebarLink to="/warranty" icon={ShieldCheck}>Garantias</SidebarLink>
           <SidebarLink to="/calendar" icon={Calendar}>Agendamentos</SidebarLink>
           <SidebarLink to="/users" icon={Users}>Usuários</SidebarLink>
+          <SidebarLink to="/client-area" icon={User}>Área do Cliente</SidebarLink>
           <SidebarLink to="/settings" icon={Settings}>Configurações</SidebarLink>
         </nav>
         

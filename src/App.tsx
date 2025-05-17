@@ -10,6 +10,14 @@ import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import Inspections from "./pages/Inspections";
 import Warranty from "./pages/Warranty";
+import Calendar from "./pages/Calendar";
+import Users from "./pages/Users";
+import ClientArea from "./pages/ClientArea";
+import ClientLayout from "./components/Layout/ClientLayout";
+import ClientDashboard from "./pages/client/Dashboard";
+import ClientInspections from "./pages/client/Inspections";
+import ClientWarranty from "./pages/client/Warranty";
+import ClientProperties from "./pages/client/Properties";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,10 +33,19 @@ const App = () => (
           <Route path="/properties" element={<AppLayout><Properties /></AppLayout>} />
           <Route path="/inspections" element={<AppLayout><Inspections /></AppLayout>} />
           <Route path="/warranty" element={<AppLayout><Warranty /></AppLayout>} />
-          {/* Placeholder routes for future implementation */}
-          <Route path="/calendar" element={<AppLayout><div className="p-8 text-center">Página de Calendário em desenvolvimento</div></AppLayout>} />
-          <Route path="/users" element={<AppLayout><div className="p-8 text-center">Página de Usuários em desenvolvimento</div></AppLayout>} />
+          <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />
+          <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
+          <Route path="/client-area" element={<AppLayout><ClientArea /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><div className="p-8 text-center">Página de Configurações em desenvolvimento</div></AppLayout>} />
+          
+          {/* Client Area Routes */}
+          <Route path="/client" element={<ClientLayout />}>
+            <Route index element={<ClientDashboard />} />
+            <Route path="inspections" element={<ClientInspections />} />
+            <Route path="warranty" element={<ClientWarranty />} />
+            <Route path="properties" element={<ClientProperties />} />
+          </Route>
+          
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
