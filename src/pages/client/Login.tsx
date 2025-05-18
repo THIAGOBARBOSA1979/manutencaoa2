@@ -54,7 +54,7 @@ export default function ClientLogin() {
         description: "Redirecionando para a área do cliente...",
       });
       
-      navigate("/client/dashboard");
+      navigate("/client");
     } catch (error) {
       toast({
         title: "Erro ao fazer login",
