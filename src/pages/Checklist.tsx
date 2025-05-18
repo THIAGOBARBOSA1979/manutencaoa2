@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ClipboardCheck, Plus, Eye, Edit, Trash, FileText, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,9 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Mock data for checklist templates
 const mockTemplates = [
@@ -152,11 +154,44 @@ const Checklist = () => {
                   Selecione um modelo de checklist para aplicar a uma unidade ou empreendimento.
                 </DialogDescription>
               </DialogHeader>
-              <div className="py-4">
-                <p className="text-center text-muted-foreground">
-                  Funcionalidade em desenvolvimento.
-                </p>
-              </div>
+              
+              <form onSubmit={handleApplyChecklist} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="template">Modelo de Checklist</Label>
+                  <Select name="template" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um modelo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockTemplates.map(template => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="property">Empreendimento</Label>
+                  <Input
+                    id="property"
+                    name="property"
+                    placeholder="Nome do empreendimento"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="unit">Unidade</Label>
+                  <Input
+                    id="unit"
+                    name="unit"
+                    placeholder="Número/Identificação da unidade"
+                    required
+                  />
+                </div>
+              </form>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setApplyDialogOpen(false)}>
                   Cancelar
@@ -167,7 +202,7 @@ const Checklist = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
+
           <Dialog open={isCreateDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -182,11 +217,27 @@ const Checklist = () => {
                   Defina um novo modelo de checklist para vistorias ou inspeções.
                 </DialogDescription>
               </DialogHeader>
-              <div className="py-4">
-                <p className="text-center text-muted-foreground">
-                  Funcionalidade em desenvolvimento.
-                </p>
-              </div>
+              <form onSubmit={handleCreateTemplate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Título do Modelo</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    placeholder="Ex: Vistoria de Pré-Entrega"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    placeholder="Descreva o propósito deste modelo de checklist..."
+                    required
+                  />
+                </div>
+              </form>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
                   Cancelar
@@ -214,7 +265,7 @@ const Checklist = () => {
             <TabsTrigger value="templates">Modelos</TabsTrigger>
             <TabsTrigger value="applied">Aplicados</TabsTrigger>
           </TabsList>
-          
+
           {/* Templates Tab */}
           <TabsContent value="templates" className="space-y-4 pt-4">
             {filteredTemplates.length > 0 ? (
@@ -258,7 +309,7 @@ const Checklist = () => {
               </div>
             )}
           </TabsContent>
-          
+
           {/* Applied Tab */}
           <TabsContent value="applied" className="pt-4">
             {filteredApplied.length > 0 ? (

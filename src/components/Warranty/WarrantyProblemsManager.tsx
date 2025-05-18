@@ -95,6 +95,16 @@ export const WarrantyProblemsManager = ({
     setProblems(problems.map(p => 
       p.id === updatedProblem.id ? updatedProblem : p
     ));
+    
+    toast({
+      title: "Problema atualizado",
+      description: `O status do problema "${updatedProblem.title}" foi atualizado para ${
+        updatedProblem.status === "resolved" ? "resolvido" :
+        updatedProblem.status === "in_progress" ? "em andamento" :
+        updatedProblem.status === "pending" ? "pendente" :
+        updatedProblem.status === "canceled" ? "cancelado" : "aberto"
+      }.`,
+    });
   };
   
   const handleFinishWarranty = () => {
