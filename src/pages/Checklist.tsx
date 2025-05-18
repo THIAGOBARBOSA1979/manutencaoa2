@@ -110,20 +110,69 @@ const Checklist = () => {
       checklist.unit.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateTemplate = () => {
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A criação de modelos de checklist será implementada em breve.",
-    });
-    setCreateDialogOpen(false);
+  const handleCreateTemplate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    try {
+      const template = {
+        title: formData.get('title') as string,
+        description: formData.get('description') as string,
+        sections: [],
+        items: [],
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+      };
+      
+      await ChecklistService.createChecklist([template], []);
+      
+      toast({
+        title: "Sucesso",
+        description: "Modelo de checklist criado com sucesso.",
+      });
+      setCreateDialogOpen(false);
+      // Recarregar a lista de templates
+      // TODO: Implementar atualização da lista
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao criar modelo de checklist.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleApplyChecklist = () => {
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A aplicação de checklists será implementada em breve.",
-    });
-    setApplyDialogOpen(false);
+  const handleApplyChecklist = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    try {
+      const application = {
+        templateId: formData.get('template') as string,
+        property: formData.get('property') as string,
+        unit: formData.get('unit') as string,
+        startDate: new Date(),
+        status: 'in_progress',
+      };
+      
+      // TODO: Implementar método de aplicação no ChecklistService
+      
+      toast({
+        title: "Sucesso",
+        description: "Checklist aplicado com sucesso.",
+      });
+      setApplyDialogOpen(false);
+      // Atualizar lista de checklists aplicados
+      // TODO: Implementar atualização da lista
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao aplicar checklist.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {

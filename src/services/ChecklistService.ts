@@ -19,9 +19,29 @@ export class ChecklistService {
       signatures,
       timestamp: new Date().toISOString(),
       hash: await this.generateHash(template),
+      status: 'active'
     };
 
     return await SyncService.syncData('checklists', checklistData);
+  }
+
+  static async applyChecklist(templateId: string, applicationData: any) {
+    const data = {
+      templateId,
+      ...applicationData,
+      timestamp: new Date().toISOString(),
+      status: 'in_progress'
+    };
+
+    return await SyncService.syncData(`checklists/${templateId}/apply`, data);
+  }
+
+  static async getTemplates() {
+    return await SyncService.syncData('checklists/templates', null, 'GET');
+  }
+
+  static async getAppliedChecklists() {
+    return await SyncService.syncData('checklists/applied', null, 'GET');
   }
 
   static async signChecklist(checklistId: string, signature: any) {
