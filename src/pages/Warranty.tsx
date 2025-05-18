@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -16,6 +17,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WarrantyService } from "@/components/Warranty/WarrantyService";
+import { useToast } from "@/components/ui/use-toast";
 
 // Mock data
 const warrantyClaims = [
@@ -82,6 +85,18 @@ const warrantyClaims = [
 ];
 
 const Warranty = () => {
+  const { toast } = useToast();
+  const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [selectedWarranty, setSelectedWarranty] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+
+  const handleAtendimento = (warrantyId: string, warrantyTitle: string) => {
+    setSelectedWarranty({ id: warrantyId, title: warrantyTitle });
+    setServiceDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -141,7 +156,11 @@ const Warranty = () => {
           {/* Warranty claims list */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {warrantyClaims.map((claim) => (
-              <WarrantyClaim key={claim.id} claim={claim} />
+              <WarrantyClaim 
+                key={claim.id} 
+                claim={claim} 
+                onAtender={() => handleAtendimento(claim.id, claim.title)}
+              />
             ))}
           </div>
         </TabsContent>
@@ -151,7 +170,11 @@ const Warranty = () => {
             {warrantyClaims
               .filter(claim => claim.status === "critical")
               .map((claim) => (
-                <WarrantyClaim key={claim.id} claim={claim} />
+                <WarrantyClaim 
+                  key={claim.id} 
+                  claim={claim} 
+                  onAtender={() => handleAtendimento(claim.id, claim.title)}
+                />
               ))}
           </div>
         </TabsContent>
@@ -161,7 +184,11 @@ const Warranty = () => {
             {warrantyClaims
               .filter(claim => claim.status === "pending")
               .map((claim) => (
-                <WarrantyClaim key={claim.id} claim={claim} />
+                <WarrantyClaim 
+                  key={claim.id} 
+                  claim={claim} 
+                  onAtender={() => handleAtendimento(claim.id, claim.title)}
+                />
               ))}
           </div>
         </TabsContent>
@@ -171,7 +198,11 @@ const Warranty = () => {
             {warrantyClaims
               .filter(claim => claim.status === "progress")
               .map((claim) => (
-                <WarrantyClaim key={claim.id} claim={claim} />
+                <WarrantyClaim 
+                  key={claim.id} 
+                  claim={claim} 
+                  onAtender={() => handleAtendimento(claim.id, claim.title)}
+                />
               ))}
           </div>
         </TabsContent>
@@ -181,11 +212,25 @@ const Warranty = () => {
             {warrantyClaims
               .filter(claim => claim.status === "complete")
               .map((claim) => (
-                <WarrantyClaim key={claim.id} claim={claim} />
+                <WarrantyClaim 
+                  key={claim.id} 
+                  claim={claim} 
+                  onAtender={() => handleAtendimento(claim.id, claim.title)}
+                />
               ))}
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Warranty Service Dialog */}
+      {selectedWarranty && (
+        <WarrantyService
+          open={serviceDialogOpen}
+          onOpenChange={setServiceDialogOpen}
+          warrantyId={selectedWarranty.id}
+          warrantyTitle={selectedWarranty.title}
+        />
+      )}
     </div>
   );
 };

@@ -15,9 +15,10 @@ interface WarrantyClaimProps {
     createdAt: Date;
     status: "pending" | "progress" | "complete" | "critical";
   };
+  onAtender?: () => void;
 }
 
-export const WarrantyClaim = ({ claim }: WarrantyClaimProps) => {
+export const WarrantyClaim = ({ claim, onAtender }: WarrantyClaimProps) => {
   return (
     <div className="bg-white p-4 rounded-lg shadow border border-slate-100 card-hover">
       <div className="flex justify-between items-start mb-3">
@@ -47,7 +48,7 @@ export const WarrantyClaim = ({ claim }: WarrantyClaimProps) => {
       
       <div className="flex justify-end gap-2">
         <Button variant="outline" size="sm">Detalhes</Button>
-        <Button variant="default" size="sm">Atender</Button>
+        <Button variant="default" size="sm" onClick={onAtender}>Atender</Button>
       </div>
     </div>
   );

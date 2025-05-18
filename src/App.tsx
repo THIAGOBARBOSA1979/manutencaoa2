@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { StrictMode } from "react"; // Add explicit import for StrictMode
+import { StrictMode } from "react"; 
 
 import { AppLayout } from "./components/Layout/AppLayout";
 import Index from "./pages/Index";
@@ -51,7 +51,7 @@ const App = () => {
               <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
               <Route path="/client-area" element={<AppLayout><ClientArea /></AppLayout>} />
               <Route path="/checklist" element={<AppLayout><Checklist /></AppLayout>} />
-              <Route path="/settings" element={<AppLayout><div className="p-8 text-center">Página de Configurações em desenvolvimento</div></AppLayout>} />
+              <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
               
               {/* Client Area Routes */}
               <Route path="/client" element={<ClientLayout />}>

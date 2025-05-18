@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +5,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Settings as SettingsIcon, Building, Bell, ShieldCheck, User, Lock } from "lucide-react";
+import { Settings as SettingsIcon, Building, Bell, ShieldCheck, User, Lock, Webhook } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import WebhooksConfig from "@/components/Settings/WebhooksConfig";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -41,6 +41,7 @@ const Settings = () => {
           <TabsTrigger value="warranty">Garantias</TabsTrigger>
           <TabsTrigger value="users">Usuários</TabsTrigger>
           <TabsTrigger value="security">Segurança</TabsTrigger>
+          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
         </TabsList>
         
         <TabsContent value="general" className="space-y-4">
@@ -393,6 +394,10 @@ const Settings = () => {
               <Button onClick={handleSaveSettings}>Salvar Alterações</Button>
             </CardFooter>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="webhooks" className="space-y-4">
+          <WebhooksConfig />
         </TabsContent>
       </Tabs>
     </div>
