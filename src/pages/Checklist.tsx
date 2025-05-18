@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from 'react';
+import { ChecklistService, ChecklistItem } from '@/services/ChecklistService';
+import { SyncService } from '@/services/SyncService';
+import { GoogleDriveService } from '@/services/GoogleDriveService';
+import { Button } from '@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from '@/components/ui/use-toast';
 import { ClipboardCheck, Plus, Eye, Edit, Trash, FileText, Check, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +20,6 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { format } from "date-fns";
-import { toast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -154,7 +158,7 @@ const Checklist = () => {
                   Selecione um modelo de checklist para aplicar a uma unidade ou empreendimento.
                 </DialogDescription>
               </DialogHeader>
-              
+
               <form onSubmit={handleApplyChecklist} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="template">Modelo de Checklist</Label>
