@@ -11,14 +11,14 @@ import WebhooksConfig from "@/components/Settings/WebhooksConfig";
 
 const Settings = () => {
   const { toast } = useToast();
-  
+
   const handleSaveSettings = () => {
     toast({
       title: "Configurações salvas",
       description: "Suas alterações foram salvas com sucesso."
     });
   };
-  
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -42,8 +42,9 @@ const Settings = () => {
           <TabsTrigger value="users">Usuários</TabsTrigger>
           <TabsTrigger value="security">Segurança</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="integrations">Integrações</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="general" className="space-y-4">
           <Card>
             <CardHeader>
@@ -71,7 +72,7 @@ const Settings = () => {
                   <Input id="company-phone" defaultValue="(11) 3456-7890" />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="company-address">Endereço</Label>
                 <Input id="company-address" defaultValue="Av. Paulista, 1000, São Paulo - SP" />
@@ -82,7 +83,7 @@ const Settings = () => {
               <Button onClick={handleSaveSettings}>Salvar Alterações</Button>
             </CardFooter>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Personalização</CardTitle>
@@ -99,7 +100,7 @@ const Settings = () => {
                   </div>
                   <Switch id="dark-mode" />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="show-logo">Mostrar Logo na Interface</Label>
@@ -107,12 +108,12 @@ const Settings = () => {
                   </div>
                   <Switch id="show-logo" defaultChecked />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="logo-upload">Logotipo da Empresa</Label>
                   <Input id="logo-upload" type="file" accept="image/*" />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="primary-color">Cor Primária</Label>
                   <div className="flex gap-2">
@@ -128,7 +129,7 @@ const Settings = () => {
             </CardFooter>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="properties" className="space-y-4">
           <Card>
             <CardHeader>
@@ -148,7 +149,7 @@ const Settings = () => {
                 </div>
                 <Switch defaultChecked />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Relatórios Mensais</Label>
@@ -156,7 +157,7 @@ const Settings = () => {
                 </div>
                 <Switch />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Integração de Documentos</Label>
@@ -170,7 +171,7 @@ const Settings = () => {
             </CardFooter>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
@@ -199,9 +200,9 @@ const Settings = () => {
                     <Switch id="client-push" defaultChecked />
                   </div>
                 </div>
-                
+
                 <Separator className="my-4" />
-                
+
                 <h3 className="text-lg font-medium">Notificações para Equipe Interna</h3>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -224,7 +225,7 @@ const Settings = () => {
             </CardFooter>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="warranty" className="space-y-4">
           <Card>
             <CardHeader>
@@ -259,7 +260,7 @@ const Settings = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <h3 className="text-lg font-medium mt-6">SLA de Atendimento</h3>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
@@ -288,7 +289,7 @@ const Settings = () => {
             </CardFooter>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="users">
           <Card>
             <CardHeader>
@@ -309,7 +310,7 @@ const Settings = () => {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Aprovação de Novos Usuários</Label>
@@ -317,7 +318,7 @@ const Settings = () => {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Autenticação em Dois Fatores</Label>
@@ -325,7 +326,7 @@ const Settings = () => {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="session-timeout">Tempo de Expiração de Sessão (minutos)</Label>
                   <Input id="session-timeout" type="number" defaultValue="30" />
@@ -337,7 +338,7 @@ const Settings = () => {
             </CardFooter>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="security">
           <Card>
             <CardHeader>
@@ -358,7 +359,7 @@ const Settings = () => {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Backup Automático</Label>
@@ -366,7 +367,7 @@ const Settings = () => {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Log de Auditoria</Label>
@@ -374,7 +375,7 @@ const Settings = () => {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="password-policy">Política de Senhas</Label>
                   <Select defaultValue="strong">
@@ -395,9 +396,39 @@ const Settings = () => {
             </CardFooter>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="webhooks" className="space-y-4">
           <WebhooksConfig />
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Webhook className="h-5 w-5" />
+                Integrações Externas
+              </CardTitle>
+              <CardDescription>
+                Configure as integrações com serviços externos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="google-api-key">Google Drive API Key</Label>
+                <Input
+                  id="google-api-key"
+                  type="password"
+                  placeholder="Insira sua chave de API do Google Drive"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Esta chave é usada para armazenar documentos e fotos no Google Drive
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button onClick={handleSaveSettings}>Salvar Alterações</Button>
+            </CardFooter>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
