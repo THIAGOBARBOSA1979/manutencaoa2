@@ -17,7 +17,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WarrantyService } from "@/components/Warranty/WarrantyService";
+import WarrantyService from "@/components/Warranty/WarrantyService";
 import { useToast } from "@/components/ui/use-toast";
 
 // Mock data
