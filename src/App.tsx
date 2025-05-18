@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { StrictMode } from "react"; // Add explicit import for StrictMode
 
 import { AppLayout } from "./components/Layout/AppLayout";
 import Index from "./pages/Index";
@@ -21,7 +22,7 @@ import ClientProperties from "./pages/client/Properties";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 
-// Create a client for React Query
+// Create a client for React Query - moved outside the component
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -31,37 +32,41 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Admin Routes */}
-          <Route path="/" element={<AppLayout><Index /></AppLayout>} />
-          <Route path="/properties" element={<AppLayout><Properties /></AppLayout>} />
-          <Route path="/inspections" element={<AppLayout><Inspections /></AppLayout>} />
-          <Route path="/warranty" element={<AppLayout><Warranty /></AppLayout>} />
-          <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />
-          <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
-          <Route path="/client-area" element={<AppLayout><ClientArea /></AppLayout>} />
-          <Route path="/settings" element={<AppLayout><div className="p-8 text-center">Página de Configurações em desenvolvimento</div></AppLayout>} />
-          
-          {/* Client Area Routes */}
-          <Route path="/client" element={<ClientLayout />}>
-            <Route index element={<ClientDashboard />} />
-            <Route path="inspections" element={<ClientInspections />} />
-            <Route path="warranty" element={<ClientWarranty />} />
-            <Route path="properties" element={<ClientProperties />} />
-          </Route>
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Admin Routes */}
+              <Route path="/" element={<AppLayout><Index /></AppLayout>} />
+              <Route path="/properties" element={<AppLayout><Properties /></AppLayout>} />
+              <Route path="/inspections" element={<AppLayout><Inspections /></AppLayout>} />
+              <Route path="/warranty" element={<AppLayout><Warranty /></AppLayout>} />
+              <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />
+              <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
+              <Route path="/client-area" element={<AppLayout><ClientArea /></AppLayout>} />
+              <Route path="/settings" element={<AppLayout><div className="p-8 text-center">Página de Configurações em desenvolvimento</div></AppLayout>} />
+              
+              {/* Client Area Routes */}
+              <Route path="/client" element={<ClientLayout />}>
+                <Route index element={<ClientDashboard />} />
+                <Route path="inspections" element={<ClientInspections />} />
+                <Route path="warranty" element={<ClientWarranty />} />
+                <Route path="properties" element={<ClientProperties />} />
+              </Route>
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </StrictMode>
+  );
+};
 
 export default App;
