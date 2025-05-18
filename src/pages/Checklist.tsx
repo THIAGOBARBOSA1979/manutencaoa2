@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChecklistService, ChecklistItem } from '@/services/ChecklistService';
 import { SyncService } from '@/services/SyncService';
 import { GoogleDriveService } from '@/services/GoogleDriveService';
-import { Button } from '@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { ClipboardCheck, Plus, Eye, Edit, Trash, FileText, Check, X } from "lucide-react";
