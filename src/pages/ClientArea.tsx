@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { User, Home, ClipboardCheck, ShieldCheck, Mail, Phone, ArrowRight, FileText, Key, Plus, History, Calendar } from "lucide-react";
+import { User, Home, ClipboardCheck, ShieldCheck, Mail, Phone, ArrowRight, FileText, Key, Plus, History, Calendar, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,123 +10,93 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { NewClientForm } from "@/components/ClientArea/NewClientForm";
 import { GenerateCredentialsForm } from "@/components/ClientArea/GenerateCredentialsForm";
 import { toast } from "@/components/ui/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-// Mock data for a client
-const client = {
-  id: "1",
-  name: "Maria Oliveira",
-  email: "maria.oliveira@email.com",
-  phone: "(11) 97777-6666",
-  status: "active",
-  property: "Edifício Aurora",
-  unit: "204",
-  documents: [
-    {
-      id: "1",
-      title: "Contrato de Compra",
-      uploadedAt: new Date(2024, 2, 15),
-      type: "contract",
-    },
-    {
-      id: "2",
-      title: "Manual do Proprietário",
-      uploadedAt: new Date(2024, 3, 10),
-      type: "manual",
-    },
-    {
-      id: "3",
-      title: "Termo de Garantia",
-      uploadedAt: new Date(2024, 3, 10),
-      type: "warranty",
-    },
-    {
-      id: "4",
-      title: "Planta Baixa",
-      uploadedAt: new Date(2024, 3, 10),
-      type: "blueprint",
-    }
-  ],
-  inspections: [
-    {
-      id: "1",
-      title: "Vistoria de Pré-entrega",
-      date: new Date(2025, 4, 15, 10, 0),
-      status: "scheduled",
-    },
-    {
-      id: "2",
-      title: "Entrega de Chaves",
-      date: new Date(2025, 4, 20, 14, 30),
-      status: "scheduled",
-    }
-  ],
-  warrantyClaims: [
-    {
-      id: "1",
-      title: "Infiltração no banheiro",
-      description: "Identificada infiltração na parede do box do banheiro social.",
-      createdAt: new Date(2025, 5, 5),
-      status: "pending",
-    }
-  ]
-};
+// Mock data improvements
+const clients = [
+  {
+    id: "1",
+    name: "Maria Oliveira",
+    email: "maria.oliveira@email.com",
+    phone: "(11) 97777-6666",
+    status: "active",
+    property: "Edifício Aurora",
+    unit: "204",
+    createdAt: new Date(2024, 2, 15),
+    lastLogin: new Date(2024, 3, 10),
+    documents: [
+      { id: "1", title: "Contrato de Compra", uploadedAt: new Date(2024, 2, 15) },
+      { id: "2", title: "Manual do Proprietário", uploadedAt: new Date(2024, 3, 10) }
+    ],
+    inspections: [
+      { id: "1", title: "Vistoria de Pré-entrega", date: new Date(2025, 4, 15, 10, 0), status: "scheduled" }
+    ],
+    warrantyClaims: [
+      { 
+        id: "1", 
+        title: "Infiltração no banheiro",
+        description: "Identificada infiltração na parede do box do banheiro social.",
+        createdAt: new Date(2025, 5, 5),
+        status: "pending"
+      }
+    ]
+  }
+];
 
 const ClientArea = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedClient, setSelectedClient] = useState<typeof clients[0] | null>(null);
   const [isNewClientDialogOpen, setNewClientDialogOpen] = useState(false);
   const [isCredentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
-  const [isHistoryDialogOpen, setHistoryDialogOpen] = useState(false);
-  const [isScheduleInspectionDialogOpen, setScheduleInspectionDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
-  // Handle client search
   const handleSearch = () => {
     if (!searchQuery.trim()) {
-      toast({
-        title: "Campo vazio",
-        description: "Digite um termo para buscar",
-        variant: "destructive"
-      });
+      toast({ title: "Campo vazio", description: "Digite um termo para buscar", variant: "destructive" });
       return;
     }
-    
-    toast({
-      title: "Busca realizada",
-      description: `Buscando por: ${searchQuery}`
-    });
-    // In a real application, this would call an API endpoint
+
+    const foundClient = clients.find(client => 
+      client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.phone.includes(searchQuery)
+    );
+
+    if (foundClient) {
+      setSelectedClient(foundClient);
+      toast({ title: "Cliente encontrado", description: `${foundClient.name} encontrado com sucesso.` });
+    } else {
+      toast({ title: "Cliente não encontrado", description: "Nenhum cliente encontrado com os termos informados.", variant: "destructive" });
+    }
   };
 
-  // Handle new client form submission
   const handleNewClientSubmit = (data: any) => {
     toast({
       title: "Cliente cadastrado",
       description: "O cliente foi cadastrado com sucesso."
     });
-    console.log("New client data:", data);
     setNewClientDialogOpen(false);
   };
 
-  // Handle credentials form submission
   const handleCredentialsSubmit = (data: any) => {
     toast({
       title: "Credenciais geradas",
       description: "As credenciais de acesso foram geradas e enviadas ao cliente."
     });
-    console.log("Credentials data:", data);
     setCredentialsDialogOpen(false);
   };
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <User />
+            <User className="h-8 w-8" />
             Área do Cliente
           </h1>
           <p className="text-muted-foreground">
-            Gestão de clientes e acesso à área do cliente
+            Gestão centralizada de clientes e acesso
           </p>
         </div>
         <div className="flex gap-2">
@@ -142,276 +111,202 @@ const ClientArea = () => {
         </div>
       </div>
 
-      {/* Search client */}
+      {/* Search */}
       <Card className="border-dashed">
         <CardHeader>
-          <CardTitle>Buscar cliente</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Buscar cliente
+          </CardTitle>
           <CardDescription>
-            Digite o email, nome ou CPF do cliente para buscar
+            Pesquise por nome, email ou telefone do cliente
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex gap-4">
             <Input 
-              placeholder="Email, nome ou CPF do cliente" 
-              className="flex-1"
+              placeholder="Digite o nome, email ou telefone" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1"
             />
             <Button onClick={handleSearch}>Buscar</Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Client details */}
+      {/* Client List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Dados do Cliente
-          </CardTitle>
+          <CardTitle>Lista de Clientes</CardTitle>
+          <CardDescription>Todos os clientes cadastrados no sistema</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-lg font-medium">{client.name}</h3>
-              <div className="flex flex-col mt-2 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{client.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{client.phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Home className="h-4 w-4 text-muted-foreground" />
-                  <span>{client.property} - Unidade {client.unit}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col justify-between h-full">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-100 text-green-800">Cliente Ativo</Badge>
-              </div>
-              <Button className="mt-4 self-end" variant="outline">
-                Acessar como Cliente <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Telefone</TableHead>
+                <TableHead>Imóvel</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {clients.map(client => (
+                <TableRow key={client.id}>
+                  <TableCell>{client.name}</TableCell>
+                  <TableCell>{client.email}</TableCell>
+                  <TableCell>{client.phone}</TableCell>
+                  <TableCell>{client.property} - {client.unit}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="bg-green-50 text-green-700">
+                      Ativo
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setSelectedClient(client)}
+                    >
+                      Detalhes
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* Client data tabs */}
-      <Tabs defaultValue="documents" className="mt-6">
-        <TabsList>
-          <TabsTrigger value="documents">Documentos</TabsTrigger>
-          <TabsTrigger value="inspections">Vistorias</TabsTrigger>
-          <TabsTrigger value="warranty">Garantias</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="documents" className="space-y-4 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {client.documents.map((document) => (
-              <Card key={document.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    {document.title}
-                  </CardTitle>
-                  <CardDescription>
-                    Adicionado em {format(document.uploadedAt, "dd/MM/yyyy")}
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Visualizar documento
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-            <Card className="border-dashed">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Adicionar documento
-                </CardTitle>
-                <CardDescription>
-                  Envie um novo documento para o cliente
-                </CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Button variant="outline" size="sm" className="w-full">
-                  Enviar documento
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="inspections" className="space-y-4 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {client.inspections.map((inspection) => (
-              <Card key={inspection.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <ClipboardCheck className="h-4 w-4" />
-                    {inspection.title}
-                  </CardTitle>
-                  <CardDescription>
-                    Agendada para {format(inspection.date, "dd/MM/yyyy 'às' HH:mm")}
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter className="flex justify-between">
-                  <Badge variant={inspection.status === "completed" ? "secondary" : "outline"}>
-                    {inspection.status === "scheduled" ? "Agendada" : "Concluída"}
-                  </Badge>
-                  <Button variant="outline" size="sm">
-                    Ver detalhes
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-            <Card className="border-dashed">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4" />
-                  Agendar vistoria
-                </CardTitle>
-                <CardDescription>
-                  Agende uma nova vistoria para o cliente
-                </CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => setScheduleInspectionDialogOpen(true)}
-                >
-                  Agendar vistoria
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="warranty" className="space-y-4 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {client.warrantyClaims.map((claim) => (
-              <Card key={claim.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4" />
-                    {claim.title}
-                  </CardTitle>
-                  <CardDescription>
-                    Aberta em {format(claim.createdAt, "dd/MM/yyyy")}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="py-0">
-                  <p className="text-sm text-muted-foreground">
-                    {claim.description}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Badge variant={claim.status === "completed" ? "secondary" : "outline"}>
-                    {claim.status === "pending" ? "Pendente" : "Concluída"}
-                  </Badge>
-                  <Button variant="outline" size="sm">
-                    Ver detalhes
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-            <Card className="border-dashed">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4" />
-                  Registrar chamado
-                </CardTitle>
-                <CardDescription>
-                  Registre um novo chamado de garantia
-                </CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Button variant="outline" size="sm" className="w-full">
-                  Registrar chamado
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* Selected Client Details */}
+      {selectedClient && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Detalhes do Cliente
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setSelectedClient(null)}>
+                Fechar
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+                <TabsTrigger value="documents">Documentos</TabsTrigger>
+                <TabsTrigger value="inspections">Vistorias</TabsTrigger>
+                <TabsTrigger value="warranty">Garantias</TabsTrigger>
+              </TabsList>
 
-      {/* Additional tools */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Key className="h-4 w-4" />
-              Credenciais de Acesso
-            </CardTitle>
-            <CardDescription>
-              Gerencie o acesso do cliente à área do cliente
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => setCredentialsDialogOpen(true)}
-            >
-              Gerenciar Credenciais
-            </Button>
-          </CardFooter>
+              <TabsContent value="overview" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-medium">Informações Pessoais</h3>
+                    <div className="mt-2 space-y-2">
+                      <p className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        {selectedClient.email}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        {selectedClient.phone}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-medium">Informações do Imóvel</h3>
+                    <div className="mt-2 space-y-2">
+                      <p className="flex items-center gap-2">
+                        <Home className="h-4 w-4 text-muted-foreground" />
+                        {selectedClient.property}
+                      </p>
+                      <p>Unidade: {selectedClient.unit}</p>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="documents" className="mt-4">
+                <div className="space-y-4">
+                  {selectedClient.documents.map(doc => (
+                    <Card key={doc.id}>
+                      <CardHeader className="p-4">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          {doc.title}
+                        </CardTitle>
+                        <CardDescription>
+                          Adicionado em {format(doc.uploadedAt, "dd/MM/yyyy")}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardFooter className="p-4">
+                        <Button variant="outline" size="sm">
+                          Visualizar
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="inspections" className="mt-4">
+                <div className="space-y-4">
+                  {selectedClient.inspections.map(inspection => (
+                    <Card key={inspection.id}>
+                      <CardHeader className="p-4">
+                        <CardTitle className="text-lg">{inspection.title}</CardTitle>
+                        <CardDescription>
+                          Agendada para {format(inspection.date, "dd/MM/yyyy 'às' HH:mm")}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardFooter className="p-4">
+                        <Badge variant={inspection.status === "completed" ? "secondary" : "outline"}>
+                          {inspection.status === "scheduled" ? "Agendada" : "Concluída"}
+                        </Badge>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="warranty" className="mt-4">
+                <div className="space-y-4">
+                  {selectedClient.warrantyClaims.map(claim => (
+                    <Card key={claim.id}>
+                      <CardHeader className="p-4">
+                        <CardTitle className="text-lg">{claim.title}</CardTitle>
+                        <CardDescription>{claim.description}</CardDescription>
+                      </CardHeader>
+                      <CardFooter className="p-4 flex justify-between">
+                        <Badge variant={claim.status === "completed" ? "secondary" : "outline"}>
+                          {claim.status === "pending" ? "Pendente" : "Concluída"}
+                        </Badge>
+                        <Button variant="outline" size="sm">
+                          Ver detalhes
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              Comunicação
-            </CardTitle>
-            <CardDescription>
-              Envie emails e notificações para o cliente
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button variant="outline" className="w-full">
-              Enviar Mensagem
-            </Button>
-          </CardFooter>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <History className="h-4 w-4" />
-              Histórico
-            </CardTitle>
-            <CardDescription>
-              Visualize o histórico completo de interações
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => setHistoryDialogOpen(true)}
-            >
-              Ver Histórico
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+      )}
 
       {/* Dialogs */}
-      {/* New Client Dialog */}
       <Dialog open={isNewClientDialogOpen} onOpenChange={setNewClientDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
             <DialogDescription>
-              Preencha os campos abaixo para cadastrar um novo cliente no sistema.
+              Preencha os campos abaixo para cadastrar um novo cliente.
             </DialogDescription>
           </DialogHeader>
           <NewClientForm 
@@ -421,7 +316,6 @@ const ClientArea = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Generate Credentials Dialog */}
       <Dialog open={isCredentialsDialogOpen} onOpenChange={setCredentialsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -434,50 +328,6 @@ const ClientArea = () => {
             onSubmit={handleCredentialsSubmit}
             onCancel={() => setCredentialsDialogOpen(false)}
           />
-        </DialogContent>
-      </Dialog>
-
-      {/* Schedule Inspection Dialog */}
-      <Dialog open={isScheduleInspectionDialogOpen} onOpenChange={setScheduleInspectionDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle>Agendar Vistoria</DialogTitle>
-            <DialogDescription>
-              Agende uma nova vistoria para este cliente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-center text-muted-foreground">
-              Funcionalidade em desenvolvimento.
-            </p>
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={() => setScheduleInspectionDialogOpen(false)}>
-              Fechar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* History Dialog */}
-      <Dialog open={isHistoryDialogOpen} onOpenChange={setHistoryDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle>Histórico do Cliente</DialogTitle>
-            <DialogDescription>
-              Registro de todas as interações e atividades do cliente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-center text-muted-foreground">
-              Funcionalidade em desenvolvimento.
-            </p>
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={() => setHistoryDialogOpen(false)}>
-              Fechar
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
     </div>
