@@ -2,7 +2,7 @@
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "../shared/StatusBadge";
-import { Calendar, MessageSquare, Building, Home } from "lucide-react";
+import { Calendar, MessageSquare, Building, Home, ListTodo } from "lucide-react";
 
 interface WarrantyClaimProps {
   claim: {
@@ -16,9 +16,10 @@ interface WarrantyClaimProps {
     status: "pending" | "progress" | "complete" | "critical";
   };
   onAtender?: () => void;
+  onGerenciarProblemas?: () => void;
 }
 
-export const WarrantyClaim = ({ claim, onAtender }: WarrantyClaimProps) => {
+export const WarrantyClaim = ({ claim, onAtender, onGerenciarProblemas }: WarrantyClaimProps) => {
   return (
     <div className="bg-white p-4 rounded-lg shadow border border-slate-100 card-hover">
       <div className="flex justify-between items-start mb-3">
@@ -46,8 +47,17 @@ export const WarrantyClaim = ({ claim, onAtender }: WarrantyClaimProps) => {
         <p className="line-clamp-2">{claim.description}</p>
       </div>
       
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <Button variant="outline" size="sm">Detalhes</Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onGerenciarProblemas}
+          className="gap-1"
+        >
+          <ListTodo className="h-4 w-4" />
+          Problemas
+        </Button>
         <Button variant="default" size="sm" onClick={onAtender}>Atender</Button>
       </div>
     </div>

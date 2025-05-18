@@ -6,7 +6,8 @@ import {
   ShieldCheck, 
   Plus, 
   Search, 
-  Filter
+  Filter,
+  ListTodo
 } from "lucide-react";
 import { WarrantyClaim } from "@/components/Warranty/WarrantyClaim";
 import { 
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WarrantyService from "@/components/Warranty/WarrantyService";
+import { WarrantyProblemsManager } from "@/components/Warranty/WarrantyProblemsManager";
 import { useToast } from "@/components/ui/use-toast";
 
 // Mock data
@@ -87,6 +89,7 @@ const warrantyClaims = [
 const Warranty = () => {
   const { toast } = useToast();
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [problemsDialogOpen, setProblemDialogOpen] = useState(false);
   const [selectedWarranty, setSelectedWarranty] = useState<{
     id: string;
     title: string;
@@ -95,6 +98,11 @@ const Warranty = () => {
   const handleAtendimento = (warrantyId: string, warrantyTitle: string) => {
     setSelectedWarranty({ id: warrantyId, title: warrantyTitle });
     setServiceDialogOpen(true);
+  };
+  
+  const handleGerenciarProblemas = (warrantyId: string, warrantyTitle: string) => {
+    setSelectedWarranty({ id: warrantyId, title: warrantyTitle });
+    setProblemDialogOpen(true);
   };
 
   return (
@@ -160,6 +168,7 @@ const Warranty = () => {
                 key={claim.id} 
                 claim={claim} 
                 onAtender={() => handleAtendimento(claim.id, claim.title)}
+                onGerenciarProblemas={() => handleGerenciarProblemas(claim.id, claim.title)}
               />
             ))}
           </div>
@@ -174,6 +183,7 @@ const Warranty = () => {
                   key={claim.id} 
                   claim={claim} 
                   onAtender={() => handleAtendimento(claim.id, claim.title)}
+                  onGerenciarProblemas={() => handleGerenciarProblemas(claim.id, claim.title)}
                 />
               ))}
           </div>
@@ -188,6 +198,7 @@ const Warranty = () => {
                   key={claim.id} 
                   claim={claim} 
                   onAtender={() => handleAtendimento(claim.id, claim.title)}
+                  onGerenciarProblemas={() => handleGerenciarProblemas(claim.id, claim.title)}
                 />
               ))}
           </div>
@@ -202,6 +213,7 @@ const Warranty = () => {
                   key={claim.id} 
                   claim={claim} 
                   onAtender={() => handleAtendimento(claim.id, claim.title)}
+                  onGerenciarProblemas={() => handleGerenciarProblemas(claim.id, claim.title)}
                 />
               ))}
           </div>
@@ -216,6 +228,7 @@ const Warranty = () => {
                   key={claim.id} 
                   claim={claim} 
                   onAtender={() => handleAtendimento(claim.id, claim.title)}
+                  onGerenciarProblemas={() => handleGerenciarProblemas(claim.id, claim.title)}
                 />
               ))}
           </div>
@@ -224,12 +237,21 @@ const Warranty = () => {
 
       {/* Warranty Service Dialog */}
       {selectedWarranty && (
-        <WarrantyService
-          open={serviceDialogOpen}
-          onOpenChange={setServiceDialogOpen}
-          warrantyId={selectedWarranty.id}
-          warrantyTitle={selectedWarranty.title}
-        />
+        <>
+          <WarrantyService
+            open={serviceDialogOpen}
+            onOpenChange={setServiceDialogOpen}
+            warrantyId={selectedWarranty.id}
+            warrantyTitle={selectedWarranty.title}
+          />
+          
+          <WarrantyProblemsManager
+            open={problemsDialogOpen}
+            onOpenChange={setProblemDialogOpen}
+            warrantyId={selectedWarranty.id}
+            warrantyTitle={selectedWarranty.title}
+          />
+        </>
       )}
     </div>
   );
