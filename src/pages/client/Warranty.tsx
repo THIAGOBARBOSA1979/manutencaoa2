@@ -18,7 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-import { WarrantyProblemItem, WarrantyProblem } from "@/components/Warranty/WarrantyProblemItem";
+import { WarrantyProblem } from "@/components/Warranty/WarrantyProblemItem";
+import { EnhancedWarrantyRequestForm } from "@/components/Warranty/EnhancedWarrantyRequestForm";
 import { useToast } from "@/components/ui/use-toast";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -55,7 +56,7 @@ const warrantyClaims = [
 const categories = [
   "Hidráulica",
   "Elétrica",
-  "Estrutural",
+  "Estrutural", 
   "Vedação e Impermeabilização",
   "Acabamento",
   "Esquadrias",
@@ -162,99 +163,21 @@ const WarrantyStatus = ({ status }: { status: "pending" | "progress" | "complete
 const ClientWarranty = () => {
   const [selectedClaim, setSelectedClaim] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [problems, setProblems] = useState<WarrantyProblem[]>([
-    {
-      id: uuidv4(),
-      category: "",
-      location: "",
-      description: "",
-      severity: "moderate",
-      photos: []
-    }
-  ]);
   const { toast } = useToast();
   
   const claim = selectedClaim 
     ? warrantyClaims.find(c => c.id === selectedClaim) 
     : null;
 
-  // Handle change in problem fields
-  const handleProblemChange = (index: number, field: keyof WarrantyProblem, value: any) => {
-    const updatedProblems = [...problems];
-    updatedProblems[index] = {
-      ...updatedProblems[index],
-      [field]: value
-    };
-    setProblems(updatedProblems);
-  };
-
-  // Add a new problem
-  const addProblem = () => {
-    setProblems([
-      ...problems,
-      {
-        id: uuidv4(),
-        category: "",
-        location: "",
-        description: "",
-        severity: "moderate",
-        photos: []
-      }
-    ]);
-  };
-
-  // Remove a problem
-  const removeProblem = (index: number) => {
-    const updatedProblems = [...problems];
-    updatedProblems.splice(index, 1);
-    setProblems(updatedProblems);
-  };
-
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate form
-    if (!title.trim()) {
-      toast({
-        title: "Erro",
-        description: "Por favor, informe um título para a solicitação",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Validate each problem
-    for (const [index, problem] of problems.entries()) {
-      if (!problem.category || !problem.location || !problem.description) {
-        toast({
-          title: "Erro",
-          description: `Por favor, preencha todos os campos obrigatórios do problema ${index + 1}`,
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-    
-    // Submit form
+  const handleSubmit = (data: any) => {
     toast({
       title: "Solicitação enviada",
       description: "Sua solicitação de garantia foi enviada com sucesso."
     });
+    console.log("Form data:", data);
     
-    // Reset form and close dialog
-    setTitle("");
-    setProblems([
-      {
-        id: uuidv4(),
-        category: "",
-        location: "",
-        description: "",
-        severity: "moderate",
-        photos: []
-      }
-    ]);
+    // Close dialog
     setIsDialogOpen(false);
   };
 
@@ -286,50 +209,10 @@ const ClientWarranty = () => {
               </DialogDescription>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="py-4 space-y-6">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Título da solicitação <span className="text-destructive">*</span></Label>
-                <Input 
-                  id="title" 
-                  placeholder="Ex: Problemas no apartamento 204" 
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-4">
-                <h3 className="font-medium">Problemas Reportados</h3>
-                
-                {problems.map((problem, index) => (
-                  <WarrantyProblemItem
-                    key={problem.id}
-                    index={index}
-                    problem={problem}
-                    onChange={handleProblemChange}
-                    onRemove={removeProblem}
-                  />
-                ))}
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addProblem}
-                  className="w-full"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar outro problema
-                </Button>
-              </div>
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  Enviar solicitação
-                </Button>
-              </DialogFooter>
-            </form>
+            <EnhancedWarrantyRequestForm 
+              onSubmit={handleSubmit} 
+              onCancel={() => setIsDialogOpen(false)} 
+            />
           </DialogContent>
         </Dialog>
       </div>

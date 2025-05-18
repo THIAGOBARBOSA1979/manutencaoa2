@@ -14,6 +14,7 @@ import Warranty from "./pages/Warranty";
 import Calendar from "./pages/Calendar";
 import Users from "./pages/Users";
 import ClientArea from "./pages/ClientArea";
+import Checklist from "./pages/Checklist";
 import ClientLayout from "./components/Layout/ClientLayout";
 import ClientDashboard from "./pages/client/Dashboard";
 import ClientInspections from "./pages/client/Inspections";
@@ -49,6 +50,7 @@ const App = () => {
               <Route path="/calendar" element={<AppLayout><Calendar /></AppLayout>} />
               <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
               <Route path="/client-area" element={<AppLayout><ClientArea /></AppLayout>} />
+              <Route path="/checklist" element={<AppLayout><Checklist /></AppLayout>} />
               <Route path="/settings" element={<AppLayout><div className="p-8 text-center">Página de Configurações em desenvolvimento</div></AppLayout>} />
               
               {/* Client Area Routes */}

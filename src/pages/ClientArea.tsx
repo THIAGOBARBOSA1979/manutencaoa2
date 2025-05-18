@@ -1,11 +1,16 @@
 
-import { User, Home, ClipboardCheck, ShieldCheck, Mail, Phone, ArrowRight, FileText, Key } from "lucide-react";
+import { useState } from "react";
+import { User, Home, ClipboardCheck, ShieldCheck, Mail, Phone, ArrowRight, FileText, Key, Plus, History, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NewClientForm } from "@/components/ClientArea/NewClientForm";
+import { GenerateCredentialsForm } from "@/components/ClientArea/GenerateCredentialsForm";
+import { toast } from "@/components/ui/use-toast";
 
 // Mock data for a client
 const client = {
@@ -68,6 +73,50 @@ const client = {
 };
 
 const ClientArea = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isNewClientDialogOpen, setNewClientDialogOpen] = useState(false);
+  const [isCredentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [isScheduleInspectionDialogOpen, setScheduleInspectionDialogOpen] = useState(false);
+
+  // Handle client search
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Campo vazio",
+        description: "Digite um termo para buscar",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    toast({
+      title: "Busca realizada",
+      description: `Buscando por: ${searchQuery}`
+    });
+    // In a real application, this would call an API endpoint
+  };
+
+  // Handle new client form submission
+  const handleNewClientSubmit = (data: any) => {
+    toast({
+      title: "Cliente cadastrado",
+      description: "O cliente foi cadastrado com sucesso."
+    });
+    console.log("New client data:", data);
+    setNewClientDialogOpen(false);
+  };
+
+  // Handle credentials form submission
+  const handleCredentialsSubmit = (data: any) => {
+    toast({
+      title: "Credenciais geradas",
+      description: "As credenciais de acesso foram geradas e enviadas ao cliente."
+    });
+    console.log("Credentials data:", data);
+    setCredentialsDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -82,10 +131,12 @@ const ClientArea = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setCredentialsDialogOpen(true)}>
+            <Key className="mr-2 h-4 w-4" />
             Gerar Credenciais
           </Button>
-          <Button>
+          <Button onClick={() => setNewClientDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
             Novo Cliente
           </Button>
         </div>
@@ -104,8 +155,10 @@ const ClientArea = () => {
             <Input 
               placeholder="Email, nome ou CPF do cliente" 
               className="flex-1"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Button>Buscar</Button>
+            <Button onClick={handleSearch}>Buscar</Button>
           </div>
         </CardContent>
       </Card>
@@ -230,7 +283,12 @@ const ClientArea = () => {
                 </CardDescription>
               </CardHeader>
               <CardFooter>
-                <Button variant="outline" size="sm" className="w-full">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => setScheduleInspectionDialogOpen(true)}
+                >
                   Agendar vistoria
                 </Button>
               </CardFooter>
@@ -299,7 +357,11 @@ const ClientArea = () => {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setCredentialsDialogOpen(true)}
+            >
               Gerenciar Credenciais
             </Button>
           </CardFooter>
@@ -323,7 +385,7 @@ const ClientArea = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="h-4 w-4" />
+              <History className="h-4 w-4" />
               Histórico
             </CardTitle>
             <CardDescription>
@@ -331,12 +393,93 @@ const ClientArea = () => {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setHistoryDialogOpen(true)}
+            >
               Ver Histórico
             </Button>
           </CardFooter>
         </Card>
       </div>
+
+      {/* Dialogs */}
+      {/* New Client Dialog */}
+      <Dialog open={isNewClientDialogOpen} onOpenChange={setNewClientDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
+            <DialogDescription>
+              Preencha os campos abaixo para cadastrar um novo cliente no sistema.
+            </DialogDescription>
+          </DialogHeader>
+          <NewClientForm 
+            onSubmit={handleNewClientSubmit} 
+            onCancel={() => setNewClientDialogOpen(false)} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate Credentials Dialog */}
+      <Dialog open={isCredentialsDialogOpen} onOpenChange={setCredentialsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Gerar Credenciais de Acesso</DialogTitle>
+            <DialogDescription>
+              Configure as credenciais de acesso para o cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <GenerateCredentialsForm 
+            onSubmit={handleCredentialsSubmit}
+            onCancel={() => setCredentialsDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule Inspection Dialog */}
+      <Dialog open={isScheduleInspectionDialogOpen} onOpenChange={setScheduleInspectionDialogOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Agendar Vistoria</DialogTitle>
+            <DialogDescription>
+              Agende uma nova vistoria para este cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-center text-muted-foreground">
+              Funcionalidade em desenvolvimento.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => setScheduleInspectionDialogOpen(false)}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* History Dialog */}
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Histórico do Cliente</DialogTitle>
+            <DialogDescription>
+              Registro de todas as interações e atividades do cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-center text-muted-foreground">
+              Funcionalidade em desenvolvimento.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => setHistoryDialogOpen(false)}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
