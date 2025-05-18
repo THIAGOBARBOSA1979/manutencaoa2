@@ -1,9 +1,8 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StrictMode } from "react"; 
 
 import { AppLayout } from "./components/Layout/AppLayout";
@@ -22,6 +21,7 @@ import ClientWarranty from "./pages/client/Warranty";
 import ClientProperties from "./pages/client/Properties";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import ClientLogin from "@/pages/client/Login";
 
 // Create a client for React Query - moved outside the component
 const queryClient = new QueryClient({
@@ -52,7 +52,7 @@ const App = () => {
               <Route path="/client-area" element={<AppLayout><ClientArea /></AppLayout>} />
               <Route path="/checklist" element={<AppLayout><Checklist /></AppLayout>} />
               <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-              
+
               {/* Client Area Routes */}
               <Route path="/client" element={<ClientLayout />}>
                 <Route index element={<ClientDashboard />} />
@@ -60,7 +60,8 @@ const App = () => {
                 <Route path="warranty" element={<ClientWarranty />} />
                 <Route path="properties" element={<ClientProperties />} />
               </Route>
-              
+              <Route path="/client/login" element={<ClientLogin />} />
+
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
