@@ -1,0 +1,71 @@
+### Escopo 1: Sincronização Portal do Cliente com Backend
+
+Desenvolver um sistema de sincronização bidirecional entre o portal do cliente e o backend com as seguintes especificações:
+
+#### 1. Funcionalidades de sincronização:
+- Autenticação e autorização unificada
+- Cadastro de solicitações de garantia em tempo real
+- Acompanhamento de status de atendimentos
+- Notificações automáticas de atualizações
+- Upload e download de documentos e mídias
+- Histórico de interações
+
+#### 2. Requisitos técnicos:
+- API RESTful com endpoints bem definidos
+- Sistema de WebSockets para atualizações em tempo real
+- Mecanismo de cache para otimização de desempenho
+- Tratamento de conflitos de concorrência
+- Sistema de filas para processos assíncronos
+- Logs detalhados de todas as operações
+- Retry automático em caso de falhas de comunicação
+
+### Escopo 2: Integração com Google Drive
+
+Implementar integração completa com Google Drive para armazenamento de arquivos com as seguintes especificações:
+
+#### 1. Estrutura de pastas:
+- Pasta principal nomeada "Pós-Venda"
+- Subpastas para cada cliente (nome do cliente + ID)
+- Dentro da pasta do cliente, categorização por tipo (Garantias, Documentos, Vistorias)
+
+#### 2. Gerenciamento de arquivos:
+- Upload direto para o Google Drive (sem armazenamento local)
+- Padrão de nomenclatura para arquivos:
+  - Fotos/vídeos: [NOME_CLIENTE]_[TIPO_SOLICITAÇÃO]_[DATA_YYYYMMDD]_[SEQUENCIAL]
+  - Documentos: [NOME_CLIENTE]_[TIPO_DOCUMENTO]_[DATA_YYYYMMDD]_[VERSÃO]
+- Controle de versão para documentos atualizados
+- Metadados personalizados para facilitar buscas
+- Indexação de conteúdo para pesquisa rápida
+
+#### 3. Configurações de segurança:
+- Autenticação OAuth 2.0 com Google API
+- Permissões granulares por tipo de usuário
+- Criptografia em trânsito e em repouso
+- Backup automático de metadados no sistema local
+- Auditoria de acesso e modificações
+
+### Escopo 3: Sistema de Checklist com Assinatura Digital
+
+Implementar sistema de checklists com validação jurídica:
+
+#### 1. Funcionalidades de checklist:
+- Templates personalizáveis por tipo de serviço
+- Versionamento de checklists
+- Campos obrigatórios e condicionais
+- Suporte a anexos e evidências
+- Histórico de alterações
+
+#### 2. Sistema de assinatura digital:
+- Certificação digital em conformidade com ICP-Brasil
+- Múltiplos fluxos de assinatura (cliente, técnico, gestor)
+- Validação biométrica (opcional)
+- Carimbo de tempo criptográfico
+- Hash do documento para verificação de integridade
+- Geração de comprovante PDF com QR Code para validação
+
+#### 3. Requisitos legais:
+- Conformidade com LGPD
+- Registro de aceite de termos e condições
+- Políticas de retenção de dados configuráveis
+- Exportação em formato válido juridicamente
+- Trilha de auditoria completa
