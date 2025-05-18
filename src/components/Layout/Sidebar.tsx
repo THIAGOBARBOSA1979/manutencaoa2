@@ -51,6 +51,7 @@ export const Sidebar = ({
           <SidebarLink to="/properties" icon={Building}>Empreendimentos</SidebarLink>
           <SidebarLink to="/inspections" icon={ClipboardCheck}>Vistorias</SidebarLink>
           <SidebarLink to="/warranty" icon={ShieldCheck}>Garantias</SidebarLink>
+          <SidebarLink to="/checklist" icon={ClipboardCheck}>Checklists</SidebarLink>
           <SidebarLink to="/calendar" icon={Calendar}>Agendamentos</SidebarLink>
           <SidebarLink to="/users" icon={Users}>Usuários</SidebarLink>
           <SidebarLink to="/client-area" icon={User}>Área do Cliente</SidebarLink>
