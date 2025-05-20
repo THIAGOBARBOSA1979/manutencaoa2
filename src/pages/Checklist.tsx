@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { ChecklistService, ChecklistItem } from '@/services/ChecklistService';
+import { ChecklistService, ChecklistItem, ChecklistTemplate } from '@/services/ChecklistService';
 import { SyncService } from '@/services/SyncService';
 import { GoogleDriveService } from '@/services/GoogleDriveService';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { v4 as uuidv4 } from 'uuid';
+import { ChecklistBuilder } from '@/components/Checklists/ChecklistBuilder';
 
 // Mock data for checklist templates
 const mockTemplates = [
@@ -95,45 +97,49 @@ const Checklist = () => {
   const [activeTab, setActiveTab] = useState("templates");
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [isApplyDialogOpen, setApplyDialogOpen] = useState(false);
+  const [templates, setTemplates] = useState(mockTemplates);
+  const [appliedChecklists, setAppliedChecklists] = useState(mockAppliedChecklists);
+  const [isBuilderMode, setIsBuilderMode] = useState(false);
 
   // Filter templates based on search term
-  const filteredTemplates = mockTemplates.filter(
+  const filteredTemplates = templates.filter(
     template => 
       template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       template.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Filter applied checklists based on search term
-  const filteredApplied = mockAppliedChecklists.filter(
+  const filteredApplied = appliedChecklists.filter(
     checklist =>
       checklist.templateTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       checklist.property.toLowerCase().includes(searchTerm.toLowerCase()) ||
       checklist.unit.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreateTemplate = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const form = event.target as HTMLFormElement;
-    const formData = new FormData(form);
-    
+  const handleCreateTemplate = async (title: string, description: string, items: ChecklistItem[]) => {
     try {
-      // Create a checklist item that conforms to the ChecklistItem interface
-      const checklistItem: ChecklistItem = {
-        id: uuidv4(), // Generate a unique ID
-        description: formData.get('title') as string,
-        required: true,
-        evidence: []
+      await ChecklistService.createChecklist(items, { title, description });
+      
+      // In a real app, we would fetch updated templates 
+      // For now, add to mock data
+      const newTemplate = {
+        id: uuidv4(),
+        title,
+        description,
+        sections: 1,
+        items: items.length,
+        createdAt: new Date(),
+        lastUpdated: new Date(),
       };
       
-      await ChecklistService.createChecklist([checklistItem], [formData.get('description') as string]);
+      setTemplates([...templates, newTemplate]);
       
       toast({
         title: "Sucesso",
         description: "Modelo de checklist criado com sucesso.",
       });
+      setIsBuilderMode(false);
       setCreateDialogOpen(false);
-      // Recarregar a lista de templates
-      // TODO: Implementar atualização da lista
     } catch (error) {
       toast({
         title: "Erro",
@@ -157,15 +163,13 @@ const Checklist = () => {
         status: 'in_progress',
       };
       
-      // TODO: Implementar método de aplicação no ChecklistService
+      // TODO: Implement application method in ChecklistService
       
       toast({
         title: "Sucesso",
         description: "Checklist aplicado com sucesso.",
       });
       setApplyDialogOpen(false);
-      // Atualizar lista de checklists aplicados
-      // TODO: Implementar atualização da lista
     } catch (error) {
       toast({
         title: "Erro",
@@ -178,6 +182,28 @@ const Checklist = () => {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
+  const startNewChecklist = () => {
+    setIsBuilderMode(true);
+    setCreateDialogOpen(false);
+  };
+
+  if (isBuilderMode) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <ClipboardCheck className="h-8 w-8" />
+            Novo Modelo de Checklist
+          </h1>
+        </div>
+        <ChecklistBuilder 
+          onSave={handleCreateTemplate}
+          onCancel={() => setIsBuilderMode(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -267,38 +293,18 @@ const Checklist = () => {
               <DialogHeader>
                 <DialogTitle>Criar Modelo de Checklist</DialogTitle>
                 <DialogDescription>
-                  Defina um novo modelo de checklist para vistorias ou inspeções.
+                  Escolha como deseja criar seu novo modelo de checklist
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleCreateTemplate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Título do Modelo</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    placeholder="Ex: Vistoria de Pré-Entrega"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    placeholder="Descreva o propósito deste modelo de checklist..."
-                    required
-                  />
-                </div>
-              </form>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                  Cancelar
+              <div className="flex flex-col space-y-4 pt-4">
+                <Button onClick={startNewChecklist}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar modelo personalizado
                 </Button>
-                <Button onClick={handleCreateTemplate}>
-                  Criar
+                <Button variant="outline">
+                  Importar de template existente
                 </Button>
-              </DialogFooter>
+              </div>
             </DialogContent>
           </Dialog>
         </div>

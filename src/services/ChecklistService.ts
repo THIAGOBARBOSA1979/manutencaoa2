@@ -12,13 +12,23 @@ export interface ChecklistItem {
   evidence?: File[] | null;
 }
 
+export interface ChecklistTemplate {
+  id?: string;
+  title: string;
+  description: string;
+  items: ChecklistItem[];
+  createdAt?: Date;
+  lastUpdated?: Date;
+}
+
 export class ChecklistService {
-  static async createChecklist(template: ChecklistItem[], signatures: string[]) {
+  static async createChecklist(items: ChecklistItem[], templateData: { title: string; description: string }) {
     const checklistData = {
-      template,
-      signatures,
+      title: templateData.title,
+      description: templateData.description,
+      items,
       timestamp: new Date().toISOString(),
-      hash: await this.generateHash(template),
+      hash: await this.generateHash(items),
       status: 'active'
     };
 
