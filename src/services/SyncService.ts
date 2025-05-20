@@ -39,16 +39,16 @@ export class SyncService {
     });
   }
 
-  static async syncData<T>(endpoint: string, data: T): Promise<T> {
+  static async syncData<T>(endpoint: string, data: T, method: string = 'POST'): Promise<T> {
     let attempt = 0;
     while (attempt < this.retryAttempts) {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/${endpoint}`, {
-          method: 'POST',
+          method,
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data),
+          body: method !== 'GET' ? JSON.stringify(data) : undefined,
         });
 
         if (!response.ok) throw new Error('Sync failed');

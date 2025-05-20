@@ -22,7 +22,7 @@ export class ChecklistService {
       status: 'active'
     };
 
-    return await SyncService.syncData('checklists', checklistData);
+    return await SyncService.syncData('checklists', checklistData, 'POST');
   }
 
   static async applyChecklist(templateId: string, applicationData: any) {
@@ -33,7 +33,7 @@ export class ChecklistService {
       status: 'in_progress'
     };
 
-    return await SyncService.syncData(`checklists/${templateId}/apply`, data);
+    return await SyncService.syncData(`checklists/${templateId}/apply`, data, 'POST');
   }
 
   static async getTemplates() {
@@ -51,7 +51,7 @@ export class ChecklistService {
       timestamp: new Date().toISOString(),
     };
 
-    return await SyncService.syncData(`checklists/${checklistId}/sign`, signatureData);
+    return await SyncService.syncData(`checklists/${checklistId}/sign`, signatureData, 'POST');
   }
 
   private static async generateHash(data: any): Promise<string> {
