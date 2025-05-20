@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { v4 as uuidv4 } from 'uuid';
 
 // Mock data for checklist templates
 const mockTemplates = [
@@ -116,16 +117,15 @@ const Checklist = () => {
     const formData = new FormData(form);
     
     try {
-      const template = {
-        title: formData.get('title') as string,
-        description: formData.get('description') as string,
-        sections: [],
-        items: [],
-        createdAt: new Date(),
-        lastUpdated: new Date(),
+      // Create a checklist item that conforms to the ChecklistItem interface
+      const checklistItem: ChecklistItem = {
+        id: uuidv4(), // Generate a unique ID
+        description: formData.get('title') as string,
+        required: true,
+        evidence: []
       };
       
-      await ChecklistService.createChecklist([template], []);
+      await ChecklistService.createChecklist([checklistItem], [formData.get('description') as string]);
       
       toast({
         title: "Sucesso",

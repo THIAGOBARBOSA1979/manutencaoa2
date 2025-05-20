@@ -9,7 +9,7 @@ export interface ChecklistItem {
     dependsOn: string;
     value: boolean;
   };
-  evidence?: File[];
+  evidence?: File[] | null;
 }
 
 export class ChecklistService {
