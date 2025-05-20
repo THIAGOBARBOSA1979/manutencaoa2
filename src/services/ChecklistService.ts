@@ -10,6 +10,7 @@ export interface ChecklistItem {
     value: boolean;
   };
   evidence?: File[] | null;
+  status?: 'ok' | 'issue' | 'na'; // Added status property
 }
 
 export interface ChecklistTemplate {
