@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -260,7 +259,7 @@ const ClientDashboard = () => {
                   </Button>
                 </div>
               </Card>
-              
+
               <Card>
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-sm font-medium">Termo de Garantia</CardTitle>
@@ -280,7 +279,7 @@ const ClientDashboard = () => {
                   </Button>
                 </div>
               </Card>
-              
+
               <Card>
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-sm font-medium">Planta Baixa</CardTitle>
@@ -300,7 +299,7 @@ const ClientDashboard = () => {
                   </Button>
                 </div>
               </Card>
-              
+
               <Card>
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-sm font-medium">Contrato de Compra</CardTitle>
