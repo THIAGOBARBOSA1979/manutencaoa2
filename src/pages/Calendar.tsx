@@ -1,102 +1,109 @@
-
 import { useState } from "react";
-import { CalendarIcon, FileCheck } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
-
-// Import our new components
 import { CalendarHeader } from "@/components/Calendar/CalendarHeader";
 import { CalendarView } from "@/components/Calendar/CalendarView";
 import { ListView } from "@/components/Calendar/ListView";
-import { CalendarFilters } from "@/components/Calendar/CalendarFilters";
 import { AppointmentDetails } from "@/components/Calendar/AppointmentDetails";
-import { appointments } from "@/components/Calendar/AppointmentData";
+import { CalendarFilters } from "@/components/Calendar/CalendarFilters";
+import { QuickActions } from "@/components/Calendar/QuickActions";
+import { appointments, type Appointment } from "@/components/Calendar/AppointmentData";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Calendar = () => {
-  const [selectedView, setSelectedView] = useState("calendar");
-  const [selectedAppointment, setSelectedAppointment] = useState<string | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [filterType, setFilterType] = useState("all");
-  const [filterProperty, setFilterProperty] = useState("all-properties");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-  const [dateFilter, setDateFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
-  
-  // Handle appointment view
-  const handleViewAppointment = (id: string) => {
-    setSelectedAppointment(id);
-    setIsDetailsOpen(true);
-  };
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [view, setView] = useState<"month" | "week" | "day">("month");
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [filters, setFilters] = useState({
+    type: "all",
+    status: "all",
+    property: "all",
+  });
 
-  // Handle appointment status change
-  const handleStatusChange = (id: string, newStatus: string) => {
-    toast({
-      title: "Status atualizado",
-      description: `O status do agendamento foi alterado para ${newStatus}`,
-    });
+  const filteredAppointments = appointments.filter(apt => {
+    const matchesType = filters.type === "all" || apt.type === filters.type;
+    const matchesStatus = filters.status === "all" || apt.status === filters.status;
+    const matchesProperty = filters.property === "all" || apt.property === filters.property;
+    return matchesType && matchesStatus && matchesProperty;
+  });
+
+  // Calculate stats for QuickActions
+  const today = new Date();
+  const todayAppointments = filteredAppointments.filter(apt => 
+    apt.date.toDateString() === today.toDateString()
+  ).length;
+
+  const pendingAppointments = filteredAppointments.filter(apt => 
+    apt.status === "scheduled"
+  ).length;
+
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+  const completedThisWeek = filteredAppointments.filter(apt =>
+    apt.status === "completed" &&
+    apt.date >= startOfWeek &&
+    apt.date <= endOfWeek
+  ).length;
+
+  const handleNewAppointment = () => {
+    // This would typically open a form modal
+    console.log("Opening new appointment form");
   };
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <CalendarHeader onChangeView={setSelectedView} />
+      <CalendarHeader
+        onViewChange={setView}
+        currentView={view}
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+      />
 
-      {/* View selection tabs */}
-      <Tabs defaultValue="calendar" value={selectedView} onValueChange={setSelectedView}>
-        <TabsList className="grid grid-cols-2 w-[300px]">
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            Calendário
-          </TabsTrigger>
-          <TabsTrigger value="list" className="flex items-center gap-2">
-            <FileCheck className="h-4 w-4" />
-            Lista
-          </TabsTrigger>
+      <QuickActions
+        todayAppointments={todayAppointments}
+        pendingAppointments={pendingAppointments}
+        completedThisWeek={completedThisWeek}
+        onNewAppointment={handleNewAppointment}
+      />
+
+      <CalendarFilters onFilterChange={setFilters} currentFilters={filters} />
+
+      <Tabs defaultValue="calendar">
+        <TabsList>
+          <TabsTrigger value="calendar">Visualização do Calendário</TabsTrigger>
+          <TabsTrigger value="list">Lista de Agendamentos</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="calendar" className="space-y-4">
-          <CalendarView 
-            appointments={appointments}
-            onViewDetails={handleViewAppointment}
-          />
+        <TabsContent value="calendar">
+          <Card>
+            <CardContent className="p-6">
+              <CalendarView
+                appointments={filteredAppointments}
+                selectedDate={selectedDate}
+                onDateSelect={setSelectedDate}
+                onAppointmentSelect={setSelectedAppointment}
+                view={view}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
         
-        <TabsContent value="list" className="space-y-4">
-          {/* Filters */}
-          <CalendarFilters
-            filterType={filterType}
-            setFilterType={setFilterType}
-            filterProperty={filterProperty}
-            setFilterProperty={setFilterProperty}
-            filterStatus={filterStatus}
-            setFilterStatus={setFilterStatus}
-            dateFilter={dateFilter}
-            setDateFilter={setDateFilter}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            filterSheetOpen={filterSheetOpen}
-            setFilterSheetOpen={setFilterSheetOpen}
-          />
-
-          {/* Appointment list */}
-          <ListView 
-            appointments={appointments}
-            onViewDetails={handleViewAppointment}
-            filterOptions={{ filterType, filterProperty, filterStatus }}
+        <TabsContent value="list">
+          <ListView
+            appointments={filteredAppointments}
+            onAppointmentSelect={setSelectedAppointment}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Appointment Details Dialog */}
-      <AppointmentDetails
-        selectedAppointment={selectedAppointment}
-        appointments={appointments}
-        isOpen={isDetailsOpen}
-        onOpenChange={setIsDetailsOpen}
-        onStatusChange={handleStatusChange}
-      />
+      {selectedAppointment && (
+        <AppointmentDetails
+          appointment={selectedAppointment}
+          onClose={() => setSelectedAppointment(null)}
+        />
+      )}
     </div>
   );
 };

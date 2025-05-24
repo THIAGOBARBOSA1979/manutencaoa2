@@ -1,15 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { ChecklistService, ChecklistItem, ChecklistTemplate } from '@/services/ChecklistService';
-import { SyncService } from '@/services/SyncService';
-import { GoogleDriveService } from '@/services/GoogleDriveService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
-import { ClipboardCheck, Plus, Eye, Edit, Trash, FileText, Check, X } from "lucide-react";
+import { ClipboardCheck, Plus, Eye, Edit } from "lucide-react";
 import { CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -21,11 +18,9 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { format } from "date-fns";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { v4 as uuidv4 } from 'uuid';
 import { ChecklistBuilder } from '@/components/Checklists/ChecklistBuilder';
+import { ChecklistTemplates } from '@/components/Checklists/ChecklistTemplates';
 
 // Mock data for checklist templates
 const mockTemplates = [
@@ -100,6 +95,7 @@ const Checklist = () => {
   const [templates, setTemplates] = useState(mockTemplates);
   const [appliedChecklists, setAppliedChecklists] = useState(mockAppliedChecklists);
   const [isBuilderMode, setIsBuilderMode] = useState(false);
+  const [showTemplateSelection, setShowTemplateSelection] = useState(false);
 
   // Filter templates based on search term
   const filteredTemplates = templates.filter(
@@ -184,9 +180,40 @@ const Checklist = () => {
   };
 
   const startNewChecklist = () => {
-    setIsBuilderMode(true);
+    setShowTemplateSelection(true);
     setCreateDialogOpen(false);
   };
+
+  const handleTemplateSelection = (template: any) => {
+    setShowTemplateSelection(false);
+    setIsBuilderMode(true);
+    // Here you would pre-populate the builder with template data
+  };
+
+  const handleCreateCustom = () => {
+    setShowTemplateSelection(false);
+    setIsBuilderMode(true);
+  };
+
+  if (showTemplateSelection) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <ClipboardCheck className="h-8 w-8" />
+            Escolher Template
+          </h1>
+          <Button variant="outline" onClick={() => setShowTemplateSelection(false)}>
+            Voltar
+          </Button>
+        </div>
+        <ChecklistTemplates 
+          onSelectTemplate={handleTemplateSelection}
+          onCreateCustom={handleCreateCustom}
+        />
+      </div>
+    );
+  }
 
   if (isBuilderMode) {
     return (
@@ -299,10 +326,7 @@ const Checklist = () => {
               <div className="flex flex-col space-y-4 pt-4">
                 <Button onClick={startNewChecklist}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Criar modelo personalizado
-                </Button>
-                <Button variant="outline">
-                  Importar de template existente
+                  Usar template ou criar personalizado
                 </Button>
               </div>
             </DialogContent>
