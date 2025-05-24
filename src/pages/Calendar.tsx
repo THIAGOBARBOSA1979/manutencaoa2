@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CalendarHeader } from "@/components/Calendar/CalendarHeader";
 import { CalendarView } from "@/components/Calendar/CalendarView";
@@ -12,12 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [view, setView] = useState<"month" | "week" | "day">("month");
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     type: "all",
     status: "all",
     property: "all",
   });
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   const filteredAppointments = appointments.filter(apt => {
     const matchesType = filters.type === "all" || apt.type === filters.type;
@@ -33,7 +35,7 @@ const Calendar = () => {
   ).length;
 
   const pendingAppointments = filteredAppointments.filter(apt => 
-    apt.status === "scheduled"
+    apt.status === "pending"
   ).length;
 
   const startOfWeek = new Date(today);
@@ -48,17 +50,21 @@ const Calendar = () => {
   ).length;
 
   const handleNewAppointment = () => {
-    // This would typically open a form modal
     console.log("Opening new appointment form");
+  };
+
+  const handleStatusChange = (id: string, newStatus: string) => {
+    console.log(`Changing status of appointment ${id} to ${newStatus}`);
   };
 
   return (
     <div className="space-y-6">
       <CalendarHeader
-        onViewChange={setView}
-        currentView={view}
-        selectedDate={selectedDate}
-        onDateChange={setSelectedDate}
+        onChangeView={(view: string) => {
+          if (view === "calendar" || view === "list") {
+            console.log(`Changing view to: ${view}`);
+          }
+        }}
       />
 
       <QuickActions
@@ -68,7 +74,18 @@ const Calendar = () => {
         onNewAppointment={handleNewAppointment}
       />
 
-      <CalendarFilters onFilterChange={setFilters} currentFilters={filters} />
+      <CalendarFilters
+        filterType={filters.type}
+        setFilterType={(type) => setFilters({...filters, type})}
+        filterProperty={filters.property}
+        setFilterProperty={(property) => setFilters({...filters, property})}
+        filterStatus={filters.status}
+        setFilterStatus={(status) => setFilters({...filters, status})}
+        dateFilter="all"
+        setDateFilter={() => {}}
+        filterSheetOpen={filterSheetOpen}
+        setFilterSheetOpen={setFilterSheetOpen}
+      />
 
       <Tabs defaultValue="calendar">
         <TabsList>
@@ -81,10 +98,7 @@ const Calendar = () => {
             <CardContent className="p-6">
               <CalendarView
                 appointments={filteredAppointments}
-                selectedDate={selectedDate}
-                onDateSelect={setSelectedDate}
-                onAppointmentSelect={setSelectedAppointment}
-                view={view}
+                onViewDetails={setSelectedAppointment}
               />
             </CardContent>
           </Card>
@@ -93,15 +107,23 @@ const Calendar = () => {
         <TabsContent value="list">
           <ListView
             appointments={filteredAppointments}
-            onAppointmentSelect={setSelectedAppointment}
+            onViewDetails={setSelectedAppointment}
+            filterOptions={{
+              filterType: filters.type,
+              filterProperty: filters.property,
+              filterStatus: filters.status,
+            }}
           />
         </TabsContent>
       </Tabs>
 
       {selectedAppointment && (
         <AppointmentDetails
-          appointment={selectedAppointment}
-          onClose={() => setSelectedAppointment(null)}
+          selectedAppointment={selectedAppointment}
+          appointments={appointments}
+          isOpen={!!selectedAppointment}
+          onOpenChange={(open) => !open && setSelectedAppointment(null)}
+          onStatusChange={handleStatusChange}
         />
       )}
     </div>

@@ -1,5 +1,14 @@
 
-import { Appointment } from "./AppointmentItem";
+export interface Appointment {
+  id: string;
+  title: string;
+  property: string;
+  unit: string;
+  client: string;
+  date: Date;
+  type: "inspection" | "warranty";
+  status: "pending" | "confirmed" | "completed" | "cancelled";
+}
 
 // Mock data for appointments
 export const appointments: Appointment[] = [
