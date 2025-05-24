@@ -60,7 +60,12 @@ const ClientDashboard = () => {
               <p><span className="font-medium">Unidade:</span> {userDetails.unit}</p>
               <p><span className="font-medium">Garantia estrutural até:</span> {format(userDetails.warrantyExpirationDate, "dd/MM/yyyy")}</p>
             </div>
-            <Button variant="outline" size="sm" className="mt-4 w-full">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-4 w-full"
+              onClick={() => window.location.href = '/properties'}
+            >
               Ver detalhes do imóvel
             </Button>
           </CardContent>
@@ -87,7 +92,12 @@ const ClientDashboard = () => {
                 <div className="mt-2">
                   <StatusBadge status="pending" label="Agendada" />
                 </div>
-                <Button variant="outline" size="sm" className="mt-4 w-full">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-4 w-full"
+                  onClick={() => window.location.href = '/inspections'}
+                >
                   Ver detalhes
                 </Button>
               </div>
@@ -124,7 +134,12 @@ const ClientDashboard = () => {
                     <StatusBadge status="pending" />
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="mt-2 w-full">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2 w-full"
+                  onClick={() => window.location.href = '/warranty'}
+                >
                   Ver todas as solicitações
                 </Button>
               </div>
@@ -155,7 +170,11 @@ const ClientDashboard = () => {
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => window.location.href = '/documents'}
+            >
               Acessar
             </Button>
           </CardContent>
@@ -174,7 +193,11 @@ const ClientDashboard = () => {
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => window.location.href = '/properties'}
+            >
               Ver
             </Button>
           </CardContent>
@@ -193,7 +216,11 @@ const ClientDashboard = () => {
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => window.location.href = '/support'}
+            >
               Contatar
             </Button>
           </CardContent>
