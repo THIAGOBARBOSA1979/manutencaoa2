@@ -251,7 +251,11 @@ const ClientDashboard = () => {
                   </p>
                 </CardContent>
                 <div className="p-4 pt-0 flex justify-center">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = '/documents/manual'}
+                  >
                     Visualizar
                   </Button>
                 </div>
@@ -267,7 +271,11 @@ const ClientDashboard = () => {
                   </p>
                 </CardContent>
                 <div className="p-4 pt-0 flex justify-center">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = '/documents/warranty'}
+                  >
                     Visualizar
                   </Button>
                 </div>
@@ -283,7 +291,11 @@ const ClientDashboard = () => {
                   </p>
                 </CardContent>
                 <div className="p-4 pt-0 flex justify-center">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = '/documents/blueprint'}
+                  >
                     Visualizar
                   </Button>
                 </div>
@@ -299,14 +311,21 @@ const ClientDashboard = () => {
                   </p>
                 </CardContent>
                 <div className="p-4 pt-0 flex justify-center">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = '/documents/contract'}
+                  >
                     Visualizar
                   </Button>
                 </div>
               </Card>
             </div>
             <div className="mt-4 text-center">
-              <Button variant="outline">
+              <Button 
+                variant="outline"
+                onClick={() => window.location.href = '/documents'}
+              >
                 Ver todos os documentos
               </Button>
             </div>
