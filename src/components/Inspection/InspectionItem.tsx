@@ -41,10 +41,10 @@ export const InspectionItem = ({ inspection }: InspectionItemProps) => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow border border-slate-100 flex flex-col md:flex-row gap-4 md:items-center justify-between hover:border-primary/30 transition-colors">
+    <div className="bg-white/50 backdrop-blur-sm p-6 rounded-lg flex flex-col md:flex-row gap-6 md:items-center justify-between transition-all duration-200 hover:bg-accent/5">
       <div className="space-y-2">
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <MapPin size={14} />
+        <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+          <MapPin size={16} className="text-primary" />
           <span>{inspection.property} - Unidade {inspection.unit}</span>
         </div>
         <div className="flex items-center gap-1 text-sm">

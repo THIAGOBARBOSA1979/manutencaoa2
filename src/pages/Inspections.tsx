@@ -46,9 +46,9 @@ export default function Inspections() {
   const [filterStatus, setFilterStatus] = useState("all");
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-8 p-8 max-w-7xl mx-auto">
       {/* Cabeçalho da página */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-6 border-b border-border/40">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <ClipboardCheck className="h-8 w-8 text-primary" />
@@ -102,7 +102,10 @@ export default function Inspections() {
       {/* Lista de Agendamentos */}
       <div className="grid gap-4">
         {inspections.map((inspection) => (
-          <Card key={inspection.id} className="overflow-hidden">
+          <Card 
+            key={inspection.id} 
+            className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30"
+          >
             <CardContent className="p-0">
               <InspectionItem inspection={inspection} />
             </CardContent>
