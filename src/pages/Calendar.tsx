@@ -11,7 +11,6 @@ import { ListView } from "@/components/Calendar/ListView";
 import { CalendarFilters } from "@/components/Calendar/CalendarFilters";
 import { AppointmentDetails } from "@/components/Calendar/AppointmentDetails";
 import { appointments } from "@/components/Calendar/AppointmentData";
-import { Appointment } from "@/components/Calendar/AppointmentItem";
 
 const Calendar = () => {
   const [selectedView, setSelectedView] = useState("calendar");
@@ -93,7 +92,7 @@ const Calendar = () => {
       {/* Appointment Details Dialog */}
       <AppointmentDetails
         selectedAppointment={selectedAppointment}
-        appointments={appointments as Appointment[]}
+        appointments={appointments}
         isOpen={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}
         onStatusChange={handleStatusChange}

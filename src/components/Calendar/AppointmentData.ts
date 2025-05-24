@@ -1,6 +1,8 @@
 
+import { Appointment } from "./AppointmentItem";
+
 // Mock data for appointments
-export const appointments = [
+export const appointments: Appointment[] = [
   {
     id: "1",
     title: "Vistoria de entrega",
