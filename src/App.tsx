@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { StrictMode, useState } from "react"; 
+import { StrictMode, useState, useEffect } from "react"; 
 
 import { AppLayout } from "./components/Layout/AppLayout";
 import Index from "./pages/Index";
@@ -25,15 +25,28 @@ import Settings from "./pages/Settings";
 import ClientLogin from "@/pages/client/Login";
 
 const App = () => {
+  console.log('App: Inicializando componente App...');
+
   // Move the QueryClient initialization inside the component
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: false,
-        retry: 1,
+  const [queryClient] = useState(() => {
+    console.log('App: Criando QueryClient...');
+    return new QueryClient({
+      defaultOptions: {
+        queries: {
+          refetchOnWindowFocus: false,
+          retry: 1,
+        },
       },
-    },
-  }));
+    });
+  });
+
+  useEffect(() => {
+    console.log('App: Componente App montado');
+    console.log('App: Ambiente:', import.meta.env.MODE);
+    console.log('App: VITE_API_URL:', import.meta.env.VITE_API_URL || 'não configurado');
+  }, []);
+
+  console.log('App: Renderizando componente App...');
 
   return (
     <StrictMode>
