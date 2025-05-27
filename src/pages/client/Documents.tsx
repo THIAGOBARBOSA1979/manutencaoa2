@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { documentService, Document } from "@/services/DocumentService";
 
-interface ClientDocument extends Document {
+interface ClientDocument extends Omit<Document, 'status'> {
   size?: string;
   downloadUrl?: string;
   status: "disponivel" | "processando" | "vencido";

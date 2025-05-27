@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 
 export interface Document {
@@ -192,8 +191,8 @@ OBSERVAÇÕES: {{observacoes}}`,
     this.updateDocument(documentId, { downloads: document.downloads + 1 });
 
     if (document.type === 'manual' && document.fileUrl) {
-      // Simular download de arquivo
-      const link = document.createElement('a');
+      // Simular download de arquivo usando window.document ao invés de document
+      const link = window.document.createElement('a');
       link.href = document.fileUrl;
       link.download = document.fileName || document.title;
       link.click();
