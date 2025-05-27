@@ -121,7 +121,12 @@ export default function AdminDocuments() {
                     rows={8}
                   />
                   <p className="text-sm text-muted-foreground">
-                    Use variáveis: {{nome_cliente}}, {{endereco}}, {{valor}}, {{data}}, {{empreendimento}}
+                    Use variáveis: 
+                    <code className="bg-muted px-1 rounded text-xs mx-1">{"{{nome_cliente}}"}</code>
+                    <code className="bg-muted px-1 rounded text-xs mx-1">{"{{endereco}}"}</code>
+                    <code className="bg-muted px-1 rounded text-xs mx-1">{"{{valor}}"}</code>
+                    <code className="bg-muted px-1 rounded text-xs mx-1">{"{{data}}"}</code>
+                    <code className="bg-muted px-1 rounded text-xs mx-1">{"{{empreendimento}}"}</code>
                   </p>
                 </div>
               </TabsContent>
