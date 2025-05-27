@@ -1,50 +1,44 @@
 
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link } from "react-router-dom";
 import { 
   Building2, 
   Shield, 
-  Users, 
   CheckCircle2, 
-  ArrowRight,
+  Star,
+  Users,
+  Award,
+  MapPin,
   Phone,
   Mail,
-  MapPin,
-  Star,
-  Award,
-  Clock
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+  ArrowRight
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
-  const features = [
+  const benefits = [
     {
       icon: Building2,
-      title: "Gestão de Imóveis",
-      description: "Controle completo do seu patrimônio imobiliário com tecnologia avançada."
-    },
-    {
-      icon: Shield,
-      title: "Garantias Digitais", 
-      description: "Sistema automatizado de garantias com acompanhamento em tempo real."
+      title: "Gestão Completa de Imóveis",
+      description: "Controle total sobre seu portfólio imobiliário com tecnologia avançada e interface intuitiva."
     },
     {
       icon: CheckCircle2,
-      title: "Vistorias Inteligentes",
-      description: "Vistorias digitais rápidas e precisas com relatórios detalhados."
+      title: "Vistorias Digitais Inteligentes",
+      description: "Sistema automatizado de vistorias com relatórios detalhados e acompanhamento em tempo real."
     },
     {
-      icon: Users,
-      title: "Portal do Cliente",
-      description: "Acesso exclusivo para clientes acompanharem seus imóveis."
+      icon: Shield,
+      title: "Garantias e Suporte 24/7",
+      description: "Atendimento especializado para garantias com processo ágil e transparente."
     }
   ];
 
   const stats = [
-    { value: "500+", label: "Imóveis Gerenciados", icon: Building2 },
-    { value: "98%", label: "Satisfação", icon: Star },
+    { value: "98%", label: "Satisfação do Cliente", icon: Star },
+    { value: "2.5k+", label: "Clientes Ativos", icon: Users },
     { value: "15+", label: "Anos de Experiência", icon: Award }
   ];
 
@@ -60,7 +54,7 @@ export default function Home() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">A2 Incorporadora</h1>
-                <p className="text-sm text-blue-600 font-medium">House Key Flow</p>
+                <p className="text-sm text-blue-600 font-medium">Excelência em Construção</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -70,18 +64,16 @@ export default function Home() {
                   <span>(11) 9999-9999</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>Seg-Sex 8h-18h</span>
+                  <Mail className="h-4 w-4" />
+                  <span>contato@a2incorporadora.com</span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" asChild>
-                  <Link to="/admin/login">Área Administrativa</Link>
+              <Link to="/login">
+                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                  Acessar Sistema
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
-                <Button asChild>
-                  <Link to="/client/login">Portal do Cliente</Link>
-                </Button>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -90,43 +82,46 @@ export default function Home() {
       {/* Hero Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 mb-6">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-lg px-6 py-2">
               Sistema de Gestão Imobiliária
             </Badge>
-            <h2 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-6">
-              Gestão completa do seu
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600"> patrimônio imobiliário</span>
+            
+            <h2 className="text-6xl font-bold text-gray-900 leading-tight">
+              A tecnologia que sua
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600"> incorporadora precisa</span>
             </h2>
-            <p className="text-xl text-gray-600 leading-relaxed mb-8 max-w-3xl mx-auto">
-              Plataforma integrada para administração de imóveis, vistorias digitais, 
-              gestão de garantias e portal exclusivo para clientes.
+            
+            <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
+              Plataforma completa para gestão de imóveis, vistorias digitais e atendimento ao cliente. 
+              Simplifique seus processos e ofereça uma experiência excepcional.
             </p>
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-lg px-8 py-4" asChild>
-                <Link to="/client/login">
-                  Acessar Portal do Cliente
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-4" asChild>
-                <Link to="/admin/login">Área Administrativa</Link>
+              <Link to="/login">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-lg px-8 py-4">
+                  Entrar no Sistema
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </Button>
+              </Link>
+              <Button size="lg" variant="outline" className="text-lg px-8 py-4">
+                Solicitar Demonstração
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
+      {/* Stats Section */}
       <section className="py-16 bg-white/50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
                   <stat.icon className="h-8 w-8 text-blue-600" />
                 </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
+                <div className="text-4xl font-bold text-gray-900 mb-2">{stat.value}</div>
                 <div className="text-gray-600">{stat.label}</div>
               </div>
             ))}
@@ -134,56 +129,52 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Benefits Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h3 className="text-3xl font-bold text-gray-900 mb-4">
-              Funcionalidades Completas
-            </h3>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Tudo que você precisa para gerenciar seu patrimônio imobiliário de forma eficiente
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mx-auto mb-4">
-                    <feature.icon className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center text-gray-600 leading-relaxed">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h3 className="text-4xl font-bold text-gray-900 mb-4">
+                Por que escolher a A2 Incorporadora?
+              </h3>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Nossa plataforma oferece todas as ferramentas necessárias para uma gestão eficiente e transparente.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {benefits.map((benefit, index) => (
+                <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardContent className="p-8 text-center">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mx-auto mb-6">
+                      <benefit.icon className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <h4 className="text-xl font-semibold text-gray-900 mb-4">{benefit.title}</h4>
+                    <p className="text-gray-600 leading-relaxed">{benefit.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-3xl mx-auto text-white">
-            <h3 className="text-3xl font-bold mb-4">
-              Pronto para começar?
+      <section className="py-20 bg-gradient-to-r from-gray-900 to-blue-900">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center text-white space-y-8">
+            <h3 className="text-4xl font-bold">
+              Pronto para revolucionar sua gestão imobiliária?
             </h3>
-            <p className="text-xl text-blue-100 mb-8">
-              Acesse sua área exclusiva e tenha controle total sobre seus imóveis
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+              Junte-se a milhares de clientes satisfeitos e experimente a diferença de um sistema completo e intuitivo.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-4" asChild>
-                <Link to="/client/login">Portal do Cliente</Link>
+            <Link to="/login">
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-4">
+                Começar Agora
+                <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-4 text-white border-white hover:bg-white hover:text-blue-600" asChild>
-                <Link to="/admin/login">Área Administrativa</Link>
-              </Button>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -199,14 +190,14 @@ export default function Home() {
                 </div>
                 <span className="text-xl font-bold">A2 Incorporadora</span>
               </div>
-              <p className="text-gray-400 leading-relaxed">
+              <p className="text-gray-300 leading-relaxed">
                 Construindo sonhos e entregando qualidade há mais de 15 anos no mercado imobiliário.
               </p>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4 text-lg">Contato</h4>
-              <div className="space-y-3 text-gray-400">
+              <h3 className="font-semibold mb-4 text-lg">Contato</h3>
+              <div className="space-y-3 text-gray-300">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
                   <span>(11) 9999-9999</span>
@@ -223,29 +214,29 @@ export default function Home() {
             </div>
 
             <div>
-              <h4 className="font-semibold mb-4 text-lg">Acesso Rápido</h4>
+              <h3 className="font-semibold mb-4 text-lg">Links Úteis</h3>
               <div className="space-y-2">
-                <Link to="/client/login" className="block text-gray-400 hover:text-white transition-colors">
-                  Portal do Cliente
+                <Link to="/privacy" className="block text-gray-300 hover:text-white transition-colors">
+                  Política de Privacidade
                 </Link>
-                <Link to="/admin/login" className="block text-gray-400 hover:text-white transition-colors">
-                  Área Administrativa
+                <Link to="/terms" className="block text-gray-300 hover:text-white transition-colors">
+                  Termos de Uso
                 </Link>
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">
+                <Link to="/support" className="block text-gray-300 hover:text-white transition-colors">
                   Central de Ajuda
-                </a>
+                </Link>
               </div>
             </div>
           </div>
           
-          <Separator className="bg-gray-700 mb-6" />
+          <Separator className="bg-white/20 mb-6" />
           
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
               © 2025 A2 Incorporadora. Todos os direitos reservados.
             </p>
             <p className="text-gray-400 text-sm mt-2 md:mt-0">
-              House Key Flow - Sistema de Gestão Imobiliária
+              Desenvolvido com ❤️ para nossos clientes
             </p>
           </div>
         </div>

@@ -12,10 +12,10 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 // Public pages
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
 
 // Admin pages and layout
 import { AppLayout } from "./components/Layout/AppLayout";
-import AdminLogin from "./pages/admin/Login";
 import AdminDocuments from "./pages/admin/Documents";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
@@ -29,7 +29,6 @@ import Settings from "./pages/Settings";
 
 // Client pages and layout
 import ClientLayout from "./components/Layout/ClientLayout";
-import ClientLogin from "@/pages/client/Login";
 import ClientDashboard from "./pages/client/Dashboard";
 import ClientDocuments from "./pages/client/Documents";
 import ClientInspections from "./pages/client/Inspections";
@@ -72,8 +71,12 @@ const App = () => {
                 {/* Public Routes */}
                 <Route path="/" element={<Home />} />
                 
-                {/* Admin Login Route */}
-                <Route path="/admin/login" element={<AdminLogin />} />
+                {/* Unified Login Route */}
+                <Route path="/login" element={<Login />} />
+                
+                {/* Legacy login routes that redirect to unified login */}
+                <Route path="/admin/login" element={<Login />} />
+                <Route path="/client/login" element={<Login />} />
                 
                 {/* Protected Admin Routes */}
                 <Route path="/admin" element={
@@ -127,9 +130,6 @@ const App = () => {
                   </ProtectedRoute>
                 } />
 
-                {/* Client Login Route */}
-                <Route path="/client/login" element={<ClientLogin />} />
-
                 {/* Protected Client Routes */}
                 <Route path="/client" element={
                   <ProtectedRoute requiredRole="client">
@@ -145,42 +145,42 @@ const App = () => {
 
                 {/* Legacy redirects for backward compatibility */}
                 <Route path="/properties" element={
-                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                  <ProtectedRoute requiredRole="admin" redirectTo="/login">
                     <AppLayout><Properties /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/inspections" element={
-                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                  <ProtectedRoute requiredRole="admin" redirectTo="/login">
                     <AppLayout><Inspections /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/warranty" element={
-                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                  <ProtectedRoute requiredRole="admin" redirectTo="/login">
                     <AppLayout><Warranty /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/calendar" element={
-                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                  <ProtectedRoute requiredRole="admin" redirectTo="/login">
                     <AppLayout><Calendar /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/users" element={
-                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                  <ProtectedRoute requiredRole="admin" redirectTo="/login">
                     <AppLayout><Users /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/client-area" element={
-                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                  <ProtectedRoute requiredRole="admin" redirectTo="/login">
                     <AppLayout><ClientArea /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/checklist" element={
-                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                  <ProtectedRoute requiredRole="admin" redirectTo="/login">
                     <AppLayout><Checklist /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/settings" element={
-                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                  <ProtectedRoute requiredRole="admin" redirectTo="/login">
                     <AppLayout><Settings /></AppLayout>
                   </ProtectedRoute>
                 } />

@@ -26,10 +26,9 @@ export const ProtectedRoute = ({
     );
   }
 
-  // Not authenticated - redirect to appropriate login
+  // Not authenticated - redirect to unified login
   if (!isAuthenticated) {
-    const loginPath = requiredRole === 'admin' ? '/admin/login' : '/client/login';
-    return <Navigate to={redirectTo || loginPath} state={{ from: location }} replace />;
+    return <Navigate to={redirectTo || '/login'} state={{ from: location }} replace />;
   }
 
   // Authenticated but wrong role
