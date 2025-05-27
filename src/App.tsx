@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 // Admin pages and layout
 import { AppLayout } from "./components/Layout/AppLayout";
 import AdminLogin from "./pages/admin/Login";
+import AdminDocuments from "./pages/admin/Documents";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import Inspections from "./pages/Inspections";
@@ -30,6 +31,7 @@ import Settings from "./pages/Settings";
 import ClientLayout from "./components/Layout/ClientLayout";
 import ClientLogin from "@/pages/client/Login";
 import ClientDashboard from "./pages/client/Dashboard";
+import ClientDocuments from "./pages/client/Documents";
 import ClientInspections from "./pages/client/Inspections";
 import ClientWarranty from "./pages/client/Warranty";
 import ClientProperties from "./pages/client/Properties";

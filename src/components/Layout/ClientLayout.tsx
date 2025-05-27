@@ -1,13 +1,14 @@
 import { Outlet, Link, NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Home, ClipboardCheck, ShieldCheck, Building, LogOut, Menu, X, User, Bell, MessageSquare } from "lucide-react";
+import { Home, ClipboardCheck, ShieldCheck, Building, LogOut, Menu, X, User, Bell, MessageSquare, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+
 const ClientNavLink = ({
   to,
   icon: Icon,
@@ -31,6 +32,7 @@ const ClientNavLink = ({
       {typeof badgeCount === 'number' && badgeCount > 0 && <Badge variant="secondary" className="ml-auto">{badgeCount}</Badge>}
     </NavLink>;
 };
+
 const NotificationPanel = () => {
   const notifications = [{
     id: "1",
@@ -83,6 +85,7 @@ const NotificationPanel = () => {
       </div>
     </div>;
 };
+
 const ChatSupportPanel = () => {
   const [message, setMessage] = useState("");
   const {
@@ -167,6 +170,7 @@ const Input = ({
 }: React.InputHTMLAttributes<HTMLInputElement>) => {
   return <input className={cn("flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50", className)} {...props} />;
 };
+
 const ClientLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -212,12 +216,11 @@ const ClientLayout = () => {
         <div className="p-4 border-b">
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src="https://github.com/shadcn.png" />
               <AvatarFallback>MO</AvatarFallback>
             </Avatar>
             <div>
               <p className="font-medium">Maria Oliveira</p>
-              <p className="text-xs text-muted-foreground">Bela Vista- Unidade 204</p>
+              <p className="text-xs text-muted-foreground">Edifício Aurora - Unidade 204</p>
             </div>
           </div>
         </div>
@@ -226,6 +229,7 @@ const ClientLayout = () => {
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           <ClientNavLink to="/client" icon={Home} onClick={handleLinkClick}>Início</ClientNavLink>
           <ClientNavLink to="/client/properties" icon={Building} onClick={handleLinkClick}>Meu Imóvel</ClientNavLink>
+          <ClientNavLink to="/client/documents" icon={FileText} badgeCount={4} onClick={handleLinkClick}>Documentos</ClientNavLink>
           <ClientNavLink to="/client/inspections" icon={ClipboardCheck} badgeCount={2} onClick={handleLinkClick}>Vistorias</ClientNavLink>
           <ClientNavLink to="/client/warranty" icon={ShieldCheck} badgeCount={1} onClick={handleLinkClick}>Garantias</ClientNavLink>
           
@@ -265,7 +269,7 @@ const ClientLayout = () => {
       
       {/* Main content */}
       <div className="md:ml-64 min-h-screen flex flex-col">
-        {/* Desktop header */}
+        {/* Desktop header - simplified without images */}
         <header className="sticky top-0 z-30 hidden md:flex items-center justify-between h-16 px-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <h1 className="text-xl font-semibold">Portal do Cliente</h1>
           
@@ -300,7 +304,6 @@ const ClientLayout = () => {
             {/* User menu */}
             <div className="flex items-center gap-2">
               <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" />
                 <AvatarFallback>MO</AvatarFallback>
               </Avatar>
               <div className="hidden md:block">
@@ -323,4 +326,5 @@ const ClientLayout = () => {
       </div>
     </div>;
 };
+
 export default ClientLayout;

@@ -2,7 +2,7 @@
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Home, Building, ClipboardCheck, ShieldCheck, Settings, Menu, X, Users, Calendar, User } from "lucide-react";
+import { Home, Building, ClipboardCheck, ShieldCheck, Settings, Menu, X, Users, Calendar, User, FileText } from "lucide-react";
 
 interface SidebarProps {
   className?: string;
@@ -42,20 +42,21 @@ export const Sidebar = ({
       <div className={cn("fixed inset-y-0 left-0 z-40 w-64 bg-sidebar flex flex-col transition-transform duration-300 lg:translate-x-0", isOpen ? "translate-x-0" : "-translate-x-full", className)}>
         {/* Logo */}
         <div className="flex items-center h-16 px-6 border-b border-sidebar-border">
-          <h1 className="text-xl font-bold text-sidebar-foreground">A2 imobiliária </h1>
+          <h1 className="text-xl font-bold text-sidebar-foreground">A2 Imobiliária</h1>
         </div>
         
         {/* Navigation links */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          <SidebarLink to="/" icon={Home} end>Dashboard</SidebarLink>
-          <SidebarLink to="/properties" icon={Building}>Empreendimentos</SidebarLink>
-          <SidebarLink to="/inspections" icon={ClipboardCheck}>Vistorias</SidebarLink>
-          <SidebarLink to="/warranty" icon={ShieldCheck}>Garantias</SidebarLink>
-          <SidebarLink to="/checklist" icon={ClipboardCheck}>Checklists</SidebarLink>
-          <SidebarLink to="/calendar" icon={Calendar}>Agendamentos</SidebarLink>
-          <SidebarLink to="/users" icon={Users}>Usuários</SidebarLink>
-          <SidebarLink to="/client-area" icon={User}>Área do Cliente</SidebarLink>
-          <SidebarLink to="/settings" icon={Settings}>Configurações</SidebarLink>
+          <SidebarLink to="/admin" icon={Home} end>Dashboard</SidebarLink>
+          <SidebarLink to="/admin/properties" icon={Building}>Empreendimentos</SidebarLink>
+          <SidebarLink to="/admin/inspections" icon={ClipboardCheck}>Vistorias</SidebarLink>
+          <SidebarLink to="/admin/warranty" icon={ShieldCheck}>Garantias</SidebarLink>
+          <SidebarLink to="/admin/documents" icon={FileText}>Documentos</SidebarLink>
+          <SidebarLink to="/admin/checklist" icon={ClipboardCheck}>Checklists</SidebarLink>
+          <SidebarLink to="/admin/calendar" icon={Calendar}>Agendamentos</SidebarLink>
+          <SidebarLink to="/admin/users" icon={Users}>Usuários</SidebarLink>
+          <SidebarLink to="/admin/client-area" icon={User}>Área do Cliente</SidebarLink>
+          <SidebarLink to="/admin/settings" icon={Settings}>Configurações</SidebarLink>
         </nav>
         
         {/* User profile */}
