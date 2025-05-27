@@ -96,6 +96,11 @@ const App = () => {
                     <AppLayout><Warranty /></AppLayout>
                   </ProtectedRoute>
                 } />
+                <Route path="/admin/documents" element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AppLayout><AdminDocuments /></AppLayout>
+                  </ProtectedRoute>
+                } />
                 <Route path="/admin/calendar" element={
                   <ProtectedRoute requiredRole="admin">
                     <AppLayout><Calendar /></AppLayout>
@@ -132,6 +137,7 @@ const App = () => {
                   </ProtectedRoute>
                 }>
                   <Route index element={<ClientDashboard />} />
+                  <Route path="documents" element={<ClientDocuments />} />
                   <Route path="inspections" element={<ClientInspections />} />
                   <Route path="warranty" element={<ClientWarranty />} />
                   <Route path="properties" element={<ClientProperties />} />
