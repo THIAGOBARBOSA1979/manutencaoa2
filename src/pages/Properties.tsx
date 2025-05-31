@@ -1,8 +1,9 @@
-
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Building, Plus, Search } from "lucide-react";
 import { PropertyCard } from "@/components/Properties/PropertyCard";
+import { EnhancedPropertyForm } from "@/components/Properties/EnhancedPropertyForm";
 import { 
   Select, 
   SelectContent, 
@@ -10,6 +11,15 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { toast } from "@/components/ui/use-toast";
 
 // Mock data
 const properties = [
@@ -64,6 +74,26 @@ const properties = [
 ];
 
 const Properties = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handlePropertySubmit = async (data: any) => {
+    console.log("New property data:", data);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    toast({
+      title: "Sucesso!",
+      description: "Empreendimento cadastrado com sucesso.",
+    });
+    
+    setIsDialogOpen(false);
+  };
+
+  const handleCancel = () => {
+    setIsDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -77,10 +107,26 @@ const Properties = () => {
             Gerenciamento de todos os empreendimentos
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Empreendimento
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Empreendimento
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Cadastrar Novo Empreendimento</DialogTitle>
+              <DialogDescription>
+                Preencha todas as informações do novo empreendimento abaixo.
+              </DialogDescription>
+            </DialogHeader>
+            <EnhancedPropertyForm 
+              onSubmit={handlePropertySubmit}
+              onCancel={handleCancel}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters */}
