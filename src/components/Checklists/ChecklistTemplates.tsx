@@ -1,126 +1,143 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ClipboardCheck, 
-  FileText, 
-  Download, 
-  Star,
-  Clock,
-  Users,
-  Building,
-  Wrench,
-  Zap,
-  Droplets
-} from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ChecklistItem } from "@/services/ChecklistService";
+import { Plus, FileText, Copy, Edit, Trash, Search, Star } from "lucide-react";
 
-interface Template {
+interface ChecklistTemplate {
   id: string;
-  title: string;
+  name: string;
   description: string;
   category: string;
-  items: number;
-  rating: number;
-  usageCount: number;
-  lastUsed: string;
-  icon: any;
-  tags: string[];
+  itemCount: number;
+  isDefault: boolean;
+  createdAt: Date;
+  items: ChecklistItem[];
 }
-
-const templates: Template[] = [
-  {
-    id: "pre-delivery",
-    title: "Vistoria Pré-Entrega Completa",
-    description: "Checklist abrangente para vistorias antes da entrega ao cliente",
-    category: "Vistoria",
-    items: 45,
-    rating: 4.8,
-    usageCount: 127,
-    lastUsed: "2 dias atrás",
-    icon: Building,
-    tags: ["Popular", "Completo", "Recomendado"]
-  },
-  {
-    id: "hydraulic",
-    title: "Inspeção Hidráulica",
-    description: "Foco em instalações hidráulicas, torneiras e sistemas de água",
-    category: "Hidráulica",
-    items: 22,
-    rating: 4.6,
-    usageCount: 89,
-    lastUsed: "1 semana atrás",
-    icon: Droplets,
-    tags: ["Especializado", "Rápido"]
-  },
-  {
-    id: "electrical",
-    title: "Verificação Elétrica",
-    description: "Checklist para instalações elétricas e sistemas de energia",
-    category: "Elétrica",
-    items: 28,
-    rating: 4.7,
-    usageCount: 76,
-    lastUsed: "3 dias atrás",
-    icon: Zap,
-    tags: ["Segurança", "Técnico"]
-  },
-  {
-    id: "maintenance",
-    title: "Manutenção Preventiva",
-    description: "Rotina de manutenção preventiva para edificações",
-    category: "Manutenção",
-    items: 35,
-    rating: 4.5,
-    usageCount: 54,
-    lastUsed: "1 mês atrás",
-    icon: Wrench,
-    tags: ["Preventivo", "Mensal"]
-  }
-];
 
 interface ChecklistTemplatesProps {
-  onSelectTemplate: (template: Template) => void;
-  onCreateCustom: () => void;
+  onSelectTemplate: (template: ChecklistTemplate) => void;
+  onCreateNew: () => void;
 }
 
-export const ChecklistTemplates = ({ onSelectTemplate, onCreateCustom }: ChecklistTemplatesProps) => {
-  const { toast } = useToast();
+export function ChecklistTemplates({ onSelectTemplate, onCreateNew }: ChecklistTemplatesProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const categories = ["all", "Vistoria", "Hidráulica", "Elétrica", "Manutenção"];
-  
-  const filteredTemplates = selectedCategory === "all" 
-    ? templates 
-    : templates.filter(t => t.category === selectedCategory);
+  // Templates predefinidos
+  const templates: ChecklistTemplate[] = [
+    {
+      id: "1",
+      name: "Vistoria Pré-Entrega",
+      description: "Checklist completo para vistoria antes da entrega do imóvel",
+      category: "Vistoria",
+      itemCount: 25,
+      isDefault: true,
+      createdAt: new Date(2025, 4, 1),
+      items: [
+        {
+          id: "1",
+          description: "Estrutural: Verificar rachaduras nas paredes",
+          required: true,
+          evidence: []
+        },
+        {
+          id: "2", 
+          description: "Hidráulica: Testar funcionamento de todas as torneiras",
+          required: true,
+          evidence: []
+        },
+        {
+          id: "3",
+          description: "Elétrica: Verificar funcionamento de todas as tomadas",
+          required: true,
+          evidence: []
+        }
+      ]
+    },
+    {
+      id: "2",
+      name: "Inspeção de Garantia",
+      description: "Verificações durante o período de garantia",
+      category: "Garantia",
+      itemCount: 18,
+      isDefault: true,
+      createdAt: new Date(2025, 4, 5),
+      items: [
+        {
+          id: "4",
+          description: "Estrutural: Verificar possíveis infiltrações",
+          required: true,
+          evidence: []
+        },
+        {
+          id: "5",
+          description: "Acabamento: Verificar estado da pintura",
+          required: false,
+          evidence: []
+        }
+      ]
+    },
+    {
+      id: "3",
+      name: "Manutenção Preventiva",
+      description: "Checklist para manutenção preventiva regular",
+      category: "Manutenção",
+      itemCount: 15,
+      isDefault: false,
+      createdAt: new Date(2025, 4, 10),
+      items: [
+        {
+          id: "6",
+          description: "Hidráulica: Verificar pressão da água",
+          required: true,
+          evidence: []
+        }
+      ]
+    }
+  ];
 
-  const handleUseTemplate = (template: Template) => {
-    onSelectTemplate(template);
-    toast({
-      title: "Template selecionado",
-      description: `Usando template: ${template.title}`,
-    });
-  };
+  const categories = ["all", "Vistoria", "Garantia", "Manutenção"];
 
-  const handleDownloadTemplate = (template: Template) => {
-    toast({
-      title: "Download iniciado",
-      description: `Baixando template: ${template.title}`,
-    });
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         template.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || template.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleDuplicateTemplate = (template: ChecklistTemplate) => {
+    const newTemplate = {
+      ...template,
+      id: Date.now().toString(),
+      name: `${template.name} (Cópia)`,
+      isDefault: false,
+      createdAt: new Date()
+    };
+    console.log("Template duplicado:", newTemplate);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold">Templates de Checklist</h3>
-          <p className="text-muted-foreground">Escolha um template pronto ou crie um personalizado</p>
+      {/* Header com busca e filtros */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar templates..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         
         <div className="flex gap-2">
-          {categories.map(category => (
+          {categories.map((category) => (
             <Button
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
@@ -131,89 +148,96 @@ export const ChecklistTemplates = ({ onSelectTemplate, onCreateCustom }: Checkli
             </Button>
           ))}
         </div>
+
+        <Button onClick={onCreateNew}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Template
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredTemplates.map(template => {
-          const IconComponent = template.icon;
-          return (
-            <Card key={template.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <IconComponent className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">{template.title}</CardTitle>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {template.category}
-                        </Badge>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs text-muted-foreground">{template.rating}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+      {/* Grid de templates */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredTemplates.map((template) => (
+          <Card key={template.id} className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    {template.name}
+                    {template.isDefault && (
+                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                    )}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {template.description}
+                  </p>
                 </div>
-                <CardDescription className="text-sm">
-                  {template.description}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-                  <span>{template.items} itens</span>
-                  <span>{template.usageCount} usos</span>
-                  <span>{template.lastUsed}</span>
+              </div>
+            </CardHeader>
+            
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Itens:</span>
+                  <Badge variant="secondary">{template.itemCount}</Badge>
                 </div>
                 
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {template.tags.map(tag => (
-                    <Badge key={tag} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Categoria:</span>
+                  <Badge variant="outline">{template.category}</Badge>
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Criado:</span>
+                  <span>{template.createdAt.toLocaleDateString()}</span>
+                </div>
+
+                <div className="flex gap-2 pt-2">
                   <Button 
                     size="sm" 
                     className="flex-1"
-                    onClick={() => handleUseTemplate(template)}
+                    onClick={() => onSelectTemplate(template)}
                   >
-                    <ClipboardCheck className="mr-2 h-4 w-4" />
                     Usar Template
                   </Button>
+                  
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => handleDownloadTemplate(template)}
+                    onClick={() => handleDuplicateTemplate(template)}
                   >
-                    <Download className="h-4 w-4" />
+                    <Copy className="h-4 w-4" />
                   </Button>
+                  
+                  {!template.isDefault && (
+                    <Button size="sm" variant="outline">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <Card className="border-dashed">
-        <CardContent className="p-6 text-center">
-          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-          <h3 className="font-medium mb-2">Criar Template Personalizado</h3>
-          <p className="text-muted-foreground text-sm mb-4">
-            Crie um checklist personalizado do zero com seus próprios itens
-          </p>
-          <Button onClick={onCreateCustom}>
-            <ClipboardCheck className="mr-2 h-4 w-4" />
-            Criar Personalizado
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Empty state */}
+      {filteredTemplates.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <FileText className="mx-auto h-12 w-12 text-muted-foreground/50" />
+            <h3 className="mt-4 text-lg font-semibold">Nenhum template encontrado</h3>
+            <p className="text-muted-foreground">
+              Tente ajustar os filtros ou criar um novo template
+            </p>
+            <Button className="mt-4" onClick={onCreateNew}>
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Primeiro Template
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
-};
+}

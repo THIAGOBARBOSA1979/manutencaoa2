@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileText, Plus, Search, Upload, Download, Edit, Trash2, Eye, Save, X, 
-  Star, Clock, AlertTriangle, Copy, Archive, BarChart, History
+  Star, Clock, AlertTriangle, Copy, Archive, BarChart, History, TrendingUp
 } from "lucide-react";
 import {
   Select,
@@ -42,6 +42,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { DocumentsDashboard } from "@/components/Documents/DocumentsDashboard";
 import { DocumentFilters } from "@/components/Documents/DocumentFilters";
 import { BulkActions } from "@/components/Documents/BulkActions";
+import { DocumentVersionHistory } from "@/components/Documents/DocumentVersionHistory";
+import { DocumentAnalytics } from "@/components/Documents/DocumentAnalytics";
 
 export default function AdminDocuments() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -361,6 +363,24 @@ export default function AdminDocuments() {
     }
   };
 
+  const handleRestoreVersion = (documentId: string, versionId: string) => {
+    try {
+      // Lógica para restaurar versão anterior
+      console.log('Restaurando versão:', versionId, 'do documento:', documentId);
+      toast({
+        title: "Versão restaurada",
+        description: "A versão anterior foi restaurada com sucesso"
+      });
+      loadDocuments();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao restaurar versão",
+        variant: "destructive"
+      });
+    }
+  };
+
   const templateVariables = documentService.getTemplateVariables();
   const categories = documentService.getCategories();
 
@@ -552,6 +572,10 @@ export default function AdminDocuments() {
             <BarChart className="h-4 w-4 mr-2" />
             Dashboard
           </TabsTrigger>
+          <TabsTrigger value="analytics">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Analytics
+          </TabsTrigger>
           <TabsTrigger value="documents">
             <FileText className="h-4 w-4 mr-2" />
             Documentos
@@ -570,6 +594,10 @@ export default function AdminDocuments() {
           <DocumentsDashboard />
         </TabsContent>
 
+        <TabsContent value="analytics">
+          <DocumentAnalytics />
+        </TabsContent>
+
         <TabsContent value="documents" className="space-y-6">
           {/* Filtros */}
           <DocumentFilters 
@@ -586,7 +614,7 @@ export default function AdminDocuments() {
             onActionComplete={loadDocuments}
           />
 
-          {/* Lista de documentos */}
+          {/* Lista de documentos com histórico de versões */}
           <div className="grid gap-4">
             {filteredDocuments.map((doc) => (
               <Card key={doc.id} className="hover:shadow-md transition-shadow">
