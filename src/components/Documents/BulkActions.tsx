@@ -167,7 +167,10 @@ export function BulkActions({ documents, selectedIds, onSelectionChange, onActio
           checked={isAllSelected}
           onCheckedChange={handleSelectAll}
           ref={(ref) => {
-            if (ref) ref.indeterminate = isIndeterminate;
+            if (ref) {
+              const inputElement = ref.querySelector('input') as HTMLInputElement;
+              if (inputElement) inputElement.indeterminate = isIndeterminate;
+            }
           }}
         />
         <span className="text-sm font-medium">

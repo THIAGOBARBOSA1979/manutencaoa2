@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -192,7 +191,7 @@ export function DocumentFilters({ onSearch, activeFilters, onClearFilters }: Doc
                 {Object.entries(activeFilters).map(([key, value]) => 
                   value && (
                     <Badge key={key} variant="secondary" className="gap-1">
-                      {key}: {value}
+                      {key}: {String(value)}
                       <X 
                         className="h-3 w-3 cursor-pointer" 
                         onClick={() => handleFilterChange(key, "")}

@@ -199,6 +199,9 @@ export default function AdminDocuments() {
         setDocuments(prev => prev.map(doc => 
           doc.id === editingDocument.id ? updatedDoc : doc
         ));
+        setFilteredDocuments(prev => prev.map(doc => 
+          doc.id === editingDocument.id ? updatedDoc : doc
+        ));
         setEditingDocument(null);
         resetForm();
 
@@ -285,12 +288,16 @@ export default function AdminDocuments() {
         fileUrl,
         fileName: file.name,
         fileSize: `${(file.size / 1024).toFixed(0)} KB`,
+        category: "outros",
         associatedTo: {},
         visible: true,
-        status: "published"
+        status: "published",
+        priority: "medium",
+        createdBy: "Admin"
       });
 
       setDocuments(prev => [...prev, newDocument]);
+      setFilteredDocuments(prev => [...prev, newDocument]);
       setUploadProgress(0);
 
       toast({
@@ -304,6 +311,53 @@ export default function AdminDocuments() {
         variant: "destructive"
       });
       setUploadProgress(0);
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high": return "destructive";
+      case "medium": return "default";
+      case "low": return "secondary";
+      default: return "outline";
+    }
+  };
+
+  const handleToggleFavorite = (id: string) => {
+    try {
+      const success = documentService.toggleFavorite(id);
+      if (success) {
+        loadDocuments();
+        toast({
+          title: "Sucesso",
+          description: "Favorito atualizado com sucesso"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar favorito",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDuplicate = (id: string) => {
+    try {
+      const duplicated = documentService.duplicateDocument(id);
+      if (duplicated) {
+        loadDocuments();
+        toast({
+          title: "Sucesso",
+          description: "Documento duplicado com sucesso"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao duplicar documento",
+        variant: "destructive"
+      });
     }
   };
 
