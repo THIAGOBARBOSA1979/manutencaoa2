@@ -438,7 +438,7 @@ export default function AdminDocuments() {
             
             <div className="space-y-2">
               <Label>Priority</Label>
-              <Select value={formData.priority} onValueChange={(value) => setFormData(prev => ({...prev, priority: value}))}>
+              <Select value={formData.priority} onValueChange={(value) => setFormData(prev => ({...prev, priority: value as "low" | "medium" | "high"}))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
