@@ -6,8 +6,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
+interface ExtendedClient {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  property: string;
+  unit: string;
+  status: string;
+  createdAt: Date;
+  lastLogin: Date;
+  documents: { id: string; title: string; uploadedAt: Date; }[];
+  inspections: { id: string; title: string; date: Date; status: string; }[];
+  warrantyClaims: { id: string; title: string; description: string; createdAt: Date; status: string; }[];
+}
+
 interface ClientDetailsProps {
-  client: any;
+  client: ExtendedClient;
   onClose: () => void;
 }
 

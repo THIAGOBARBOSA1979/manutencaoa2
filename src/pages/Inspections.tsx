@@ -36,7 +36,7 @@ export default function Inspections() {
     total: inspections.length,
     pending: inspections.filter(i => i.status === "pending").length,
     inProgress: inspections.filter(i => i.status === "progress").length,
-    completed: inspections.filter(i => i.status === "complete").length
+    completed: inspections.filter(i => i.status === "complete" as any).length || 0
   };
 
   return (

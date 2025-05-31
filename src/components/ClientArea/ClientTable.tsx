@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface Client {
+interface ExtendedClient {
   id: string;
   name: string;
   email: string;
@@ -12,11 +12,16 @@ interface Client {
   property: string;
   unit: string;
   status: string;
+  createdAt: Date;
+  lastLogin: Date;
+  documents: { id: string; title: string; uploadedAt: Date; }[];
+  inspections: { id: string; title: string; date: Date; status: string; }[];
+  warrantyClaims: { id: string; title: string; description: string; createdAt: Date; status: string; }[];
 }
 
 interface ClientTableProps {
-  clients: Client[];
-  onSelectClient: (client: Client) => void;
+  clients: ExtendedClient[];
+  onSelectClient: (client: ExtendedClient) => void;
 }
 
 export function ClientTable({ clients, onSelectClient }: ClientTableProps) {
