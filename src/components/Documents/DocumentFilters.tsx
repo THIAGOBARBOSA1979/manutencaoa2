@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,14 +25,13 @@ interface DocumentFiltersProps {
   onSearch: (query: string, filters: any) => void;
   activeFilters: any;
   onClearFilters: () => void;
+  categories: Array<{ id: string; name: string; }>;
 }
 
-export function DocumentFilters({ onSearch, activeFilters, onClearFilters }: DocumentFiltersProps) {
+export function DocumentFilters({ onSearch, activeFilters, onClearFilters, categories }: DocumentFiltersProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
-  
-  const categories = documentService.getCategories();
 
   const handleSearch = () => {
     const filters = {

@@ -15,6 +15,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { documentService, Document } from "@/services/DocumentService";
@@ -209,9 +216,9 @@ export default function AdminDocuments() {
     }
   };
 
-  const handleRestoreVersion = (documentId: string, versionId: string) => {
+  const handleRestoreVersion = (versionId: string) => {
     try {
-      console.log('Restaurando versão:', versionId, 'do documento:', documentId);
+      console.log('Restaurando versão:', versionId);
       toast({
         title: "Versão restaurada",
         description: "A versão anterior foi restaurada com sucesso"
