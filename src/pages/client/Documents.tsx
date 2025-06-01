@@ -145,6 +145,13 @@ export default function ClientDocuments() {
     }
   };
 
+  const handleDownloadById = (id: string) => {
+    const doc = documents.find(d => d.id === id);
+    if (doc) {
+      handleDownload(doc);
+    }
+  };
+
   const handlePreview = (doc: ClientDocument) => {
     if (doc.status === "processando") {
       toast({
@@ -433,66 +440,7 @@ export default function ClientDocuments() {
         <TabsContent value="favorites">
           <div className="grid gap-4">
             {documents.filter(d => d.isFavorite).map((doc) => (
-              <Card key={doc.id} className="hover:shadow-md transition-shadow border-yellow-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="space-y-1 flex-1">
-                        <h3 className="font-medium leading-none">{doc.title}</h3>
-                        {doc.description && (
-                          <p className="text-sm text-muted-foreground">{doc.description}</p>
-                        )}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {doc.createdAt.toLocaleDateString()}
-                          <Separator orientation="vertical" className="h-3" />
-                          <span>{doc.size}</span>
-                          <Separator orientation="vertical" className="h-3" />
-                          <span>{doc.downloads} downloads</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={doc.type === "auto" ? "default" : "secondary"} className="text-xs">
-                            {doc.type === "auto" ? "Automático" : "Manual"}
-                          </Badge>
-                          <Badge variant={doc.status === "disponivel" ? "default" : doc.status === "processando" ? "secondary" : "destructive"} className="text-xs">
-                            {doc.status === "disponivel" ? "Disponível" : doc.status === "processando" ? "Processando" : "Vencido"}
-                          </Badge>
-                          {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="gap-2"
-                        onClick={() => handlePreview(doc)}
-                        disabled={doc.status === "processando"}
-                      >
-                        <Eye className="h-4 w-4" />
-                        {doc.type === "auto" ? "Preview" : "Abrir"}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={() => handleDownload(doc)}
-                        disabled={doc.status === "processando"}
-                      >
-                        <Download className="h-4 w-4" />
-                        Baixar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <DocumentCard key={doc.id} doc={doc} />
             ))}
           </div>
         </TabsContent>
@@ -503,66 +451,7 @@ export default function ClientDocuments() {
               .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
               .slice(0, 10)
               .map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <FileText className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="space-y-1 flex-1">
-                          <h3 className="font-medium leading-none">{doc.title}</h3>
-                          {doc.description && (
-                            <p className="text-sm text-muted-foreground">{doc.description}</p>
-                          )}
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {doc.createdAt.toLocaleDateString()}
-                            <Separator orientation="vertical" className="h-3" />
-                            <span>{doc.size}</span>
-                            <Separator orientation="vertical" className="h-3" />
-                            <span>{doc.downloads} downloads</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={doc.type === "auto" ? "default" : "secondary"} className="text-xs">
-                              {doc.type === "auto" ? "Automático" : "Manual"}
-                            </Badge>
-                            <Badge variant={doc.status === "disponivel" ? "default" : doc.status === "processando" ? "secondary" : "destructive"} className="text-xs">
-                              {doc.status === "disponivel" ? "Disponível" : doc.status === "processando" ? "Processando" : "Vencido"}
-                            </Badge>
-                            {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="gap-2"
-                          onClick={() => handlePreview(doc)}
-                          disabled={doc.status === "processando"}
-                        >
-                          <Eye className="h-4 w-4" />
-                          {doc.type === "auto" ? "Preview" : "Abrir"}
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          className="gap-2"
-                          onClick={() => handleDownload(doc)}
-                          disabled={doc.status === "processando"}
-                        >
-                          <Download className="h-4 w-4" />
-                          Baixar
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <DocumentCard key={doc.id} doc={doc} />
               ))}
           </div>
         </TabsContent>
@@ -570,66 +459,7 @@ export default function ClientDocuments() {
         <TabsContent value="contracts">
           <div className="grid gap-4">
             {documents.filter(d => d.category === "contrato").map((doc) => (
-              <Card key={doc.id} className="hover:shadow-md transition-shadow border-blue-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="space-y-1 flex-1">
-                        <h3 className="font-medium leading-none">{doc.title}</h3>
-                        {doc.description && (
-                          <p className="text-sm text-muted-foreground">{doc.description}</p>
-                        )}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {doc.createdAt.toLocaleDateString()}
-                          <Separator orientation="vertical" className="h-3" />
-                          <span>{doc.size}</span>
-                          <Separator orientation="vertical" className="h-3" />
-                          <span>{doc.downloads} downloads</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={doc.type === "auto" ? "default" : "secondary"} className="text-xs">
-                            {doc.type === "auto" ? "Automático" : "Manual"}
-                          </Badge>
-                          <Badge variant={doc.status === "disponivel" ? "default" : doc.status === "processando" ? "secondary" : "destructive"} className="text-xs">
-                            {doc.status === "disponivel" ? "Disponível" : doc.status === "processando" ? "Processando" : "Vencido"}
-                          </Badge>
-                          {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="gap-2"
-                        onClick={() => handlePreview(doc)}
-                        disabled={doc.status === "processando"}
-                      >
-                        <Eye className="h-4 w-4" />
-                        {doc.type === "auto" ? "Preview" : "Abrir"}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={() => handleDownload(doc)}
-                        disabled={doc.status === "processando"}
-                      >
-                        <Download className="h-4 w-4" />
-                        Baixar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <DocumentCard key={doc.id} doc={doc} />
             ))}
           </div>
         </TabsContent>
@@ -679,10 +509,10 @@ export default function ClientDocuments() {
 
       {/* Preview Dialog */}
       <DocumentPreview
-        document={previewDoc}
+        document={previewDoc as Document | null}
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
-        onDownload={handleDownload}
+        onDownload={handleDownloadById}
         content={previewContent}
       />
     </div>
