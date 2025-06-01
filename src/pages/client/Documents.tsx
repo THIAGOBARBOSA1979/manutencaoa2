@@ -78,6 +78,20 @@ export default function ClientDocuments() {
     return `Documento em formato ${doc.fileName?.split('.').pop()?.toUpperCase() || 'PDF'}`;
   };
 
+  // Convert ClientDocument to Document for preview component
+  const convertToDocument = (clientDoc: ClientDocument): Document => {
+    const statusMapping: Record<ClientDocument['status'], Document['status']> = {
+      'disponivel': 'published',
+      'processando': 'draft',
+      'vencido': 'archived'
+    };
+
+    return {
+      ...clientDoc,
+      status: statusMapping[clientDoc.status]
+    };
+  };
+
   // Filtros aplicados
   const filteredDocuments = useMemo(() => {
     return documents.filter(doc => {
@@ -509,7 +523,7 @@ export default function ClientDocuments() {
 
       {/* Preview Dialog */}
       <DocumentPreview
-        document={previewDoc as Document | null}
+        document={previewDoc ? convertToDocument(previewDoc) : null}
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         onDownload={handleDownloadById}
