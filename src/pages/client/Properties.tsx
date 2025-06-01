@@ -1,73 +1,227 @@
-
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, FileText, Home, Calendar, ShieldCheck, Ruler, MapPin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Building, 
+  FileText, 
+  Home, 
+  Calendar, 
+  ShieldCheck, 
+  Ruler, 
+  MapPin,
+  Download,
+  Eye,
+  Star,
+  Clock,
+  CheckCircle
+} from "lucide-react";
 
-// Mock data
+// Mock data with enhanced information
 const property = {
   id: "1",
   name: "Edifício Aurora",
   unit: "204",
   address: "Rua das Flores, 1500, Centro",
   city: "São Paulo",
-  state: "SP",
+  state: "SP", 
   size: "72m²",
   bedrooms: 2,
   bathrooms: 2,
   deliveryDate: "15/04/2025",
   warrantyExpiration: "15/04/2030",
+  status: "delivered",
+  rating: 4.8,
+  completionPercentage: 100,
   documents: [
-    { id: "1", title: "Manual do Proprietário", type: "manual" },
-    { id: "2", title: "Termo de Garantia", type: "warranty" },
-    { id: "3", title: "Planta Baixa", type: "blueprint" },
-    { id: "4", title: "Contrato de Compra", type: "contract" }
+    { 
+      id: "1", 
+      title: "Manual do Proprietário", 
+      type: "manual",
+      size: "2.4 MB",
+      lastModified: "20/05/2025",
+      isNew: true
+    },
+    { 
+      id: "2", 
+      title: "Termo de Garantia", 
+      type: "warranty",
+      size: "1.8 MB", 
+      lastModified: "15/04/2025",
+      isNew: false
+    },
+    { 
+      id: "3", 
+      title: "Planta Baixa", 
+      type: "blueprint",
+      size: "5.2 MB",
+      lastModified: "10/04/2025", 
+      isNew: false
+    },
+    { 
+      id: "4", 
+      title: "Contrato de Compra", 
+      type: "contract",
+      size: "3.1 MB",
+      lastModified: "01/03/2024",
+      isNew: false
+    }
   ]
 };
 
-const ClientProperties = () => {
+const StatusBadge = ({ status }: { status: string }) => {
+  const statusConfig = {
+    delivered: { label: "Entregue", variant: "default" as const, color: "bg-green-500" },
+    progress: { label: "Em Andamento", variant: "secondary" as const, color: "bg-blue-500" },
+    pending: { label: "Pendente", variant: "outline" as const, color: "bg-yellow-500" }
+  };
+
+  const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+
   return (
-    <div className="space-y-6">
+    <Badge variant={config.variant} className="flex items-center gap-1">
+      <div className={`w-2 h-2 rounded-full ${config.color}`}></div>
+      {config.label}
+    </Badge>
+  );
+};
+
+const DocumentCard = ({ doc }: { doc: any }) => {
+  const getDocumentIcon = (type: string) => {
+    switch (type) {
+      case "manual": return "📋";
+      case "warranty": return "🛡️";
+      case "blueprint": return "📐";
+      case "contract": return "📄";
+      default: return "📁";
+    }
+  };
+
+  const getDocumentColor = (type: string) => {
+    switch (type) {
+      case "manual": return "from-blue-500/10 to-blue-600/10 border-blue-200";
+      case "warranty": return "from-green-500/10 to-green-600/10 border-green-200";
+      case "blueprint": return "from-purple-500/10 to-purple-600/10 border-purple-200";
+      case "contract": return "from-orange-500/10 to-orange-600/10 border-orange-200";
+      default: return "from-gray-500/10 to-gray-600/10 border-gray-200";
+    }
+  };
+
+  return (
+    <Card className={`border transition-all duration-200 hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br ${getDocumentColor(doc.type)}`}>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">{getDocumentIcon(doc.type)}</div>
+            <div>
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                {doc.title}
+                {doc.isNew && (
+                  <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
+                    Novo
+                  </Badge>
+                )}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {doc.size} • Atualizado em {doc.lastModified}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="flex-1 gap-1">
+            <Eye size={14} />
+            Ver
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1 gap-1">
+            <Download size={14} />
+            Baixar
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ClientProperties = () => {
+  const [activeTab, setActiveTab] = useState("overview");
+
+  return (
+    <div className="space-y-6 animate-fade-in">
       {/* Page header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <Building className="h-8 w-8" />
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
+            <Building className="h-8 w-8 text-primary" />
+          </div>
           Meu Imóvel
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Informações e documentos relacionados ao seu imóvel
+        <p className="text-muted-foreground">
+          Informações completas e documentos do seu imóvel
         </p>
       </div>
 
-      {/* Property card */}
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold">{property.name}</h2>
-              <p className="text-xl mt-1">Unidade {property.unit}</p>
-              <div className="flex items-center gap-1 mt-2 text-muted-foreground">
-                <MapPin size={16} />
-                <span>{property.address}, {property.city}-{property.state}</span>
+      {/* Property hero card */}
+      <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-primary/5 via-background to-primary/5">
+        <CardContent className="p-0">
+          <div className="flex flex-col lg:flex-row">
+            {/* Property image/visual */}
+            <div className="lg:w-1/3 h-64 lg:h-auto bg-gradient-to-br from-primary/20 to-primary/30 flex items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              <Building className="h-24 w-24 text-white/80" />
+              <div className="absolute top-4 right-4">
+                <StatusBadge status={property.status} />
+              </div>
+              <div className="absolute bottom-4 left-4 text-white">
+                <div className="flex items-center gap-1 mb-1">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm font-medium">{property.rating}</span>
+                </div>
+                <p className="text-xs opacity-90">Avaliação do imóvel</p>
               </div>
             </div>
-            <div className="flex flex-col justify-center">
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="bg-background rounded-lg p-3 shadow-sm">
-                  <div className="text-muted-foreground text-sm">Área</div>
-                  <div className="text-xl font-medium mt-1">{property.size}</div>
+            
+            {/* Property details */}
+            <div className="flex-1 p-6 lg:p-8">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <div className="flex-1">
+                  <h2 className="text-2xl lg:text-3xl font-bold mb-2">{property.name}</h2>
+                  <p className="text-xl text-muted-foreground mb-3">Unidade {property.unit}</p>
+                  <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                    <MapPin size={16} />
+                    <span>{property.address}, {property.city}-{property.state}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <CheckCircle size={16} className="text-green-500" />
+                      <span>Entregue em {property.deliveryDate}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock size={16} className="text-blue-500" />
+                      <span>Garantia até {property.warrantyExpiration}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-background rounded-lg p-3 shadow-sm">
-                  <div className="text-muted-foreground text-sm">Quartos</div>
-                  <div className="text-xl font-medium mt-1">{property.bedrooms}</div>
-                </div>
-                <div className="bg-background rounded-lg p-3 shadow-sm">
-                  <div className="text-muted-foreground text-sm">Banheiros</div>
-                  <div className="text-xl font-medium mt-1">{property.bathrooms}</div>
-                </div>
-                <div className="bg-background rounded-lg p-3 shadow-sm">
-                  <div className="text-muted-foreground text-sm">Entrega</div>
-                  <div className="text-xl font-medium mt-1">{property.deliveryDate}</div>
+                
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-background/60 backdrop-blur-sm rounded-xl p-4 text-center border">
+                    <div className="text-muted-foreground text-sm mb-1">Área</div>
+                    <div className="text-2xl font-bold text-primary">{property.size}</div>
+                  </div>
+                  <div className="bg-background/60 backdrop-blur-sm rounded-xl p-4 text-center border">
+                    <div className="text-muted-foreground text-sm mb-1">Quartos</div>
+                    <div className="text-2xl font-bold text-primary">{property.bedrooms}</div>
+                  </div>
+                  <div className="bg-background/60 backdrop-blur-sm rounded-xl p-4 text-center border">
+                    <div className="text-muted-foreground text-sm mb-1">Banheiros</div>
+                    <div className="text-2xl font-bold text-primary">{property.bathrooms}</div>
+                  </div>
+                  <div className="bg-background/60 backdrop-blur-sm rounded-xl p-4 text-center border">
+                    <div className="text-muted-foreground text-sm mb-1">Status</div>
+                    <div className="text-xl font-bold text-green-600">100%</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -76,194 +230,55 @@ const ClientProperties = () => {
       </Card>
 
       {/* Tabs for property information */}
-      <Tabs defaultValue="documents" className="mt-6">
-        <TabsList>
-          <TabsTrigger value="documents">Documentos</TabsTrigger>
-          <TabsTrigger value="features">Características</TabsTrigger>
-          <TabsTrigger value="warranty">Garantias</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3 bg-muted/50">
+          <TabsTrigger value="overview" className="gap-2">
+            <Home size={16} />
+            Visão Geral
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="gap-2">
+            <FileText size={16} />
+            Documentos
+          </TabsTrigger>
+          <TabsTrigger value="warranty" className="gap-2">
+            <ShieldCheck size={16} />
+            Garantias
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="documents" className="space-y-4 pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Documentos do Imóvel</CardTitle>
-              <CardDescription>
-                Acesse todos os documentos relacionados ao seu imóvel
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {property.documents.map((doc) => (
-                <Card key={doc.id} className="border">
-                  <CardContent className="p-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-full">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{doc.title}</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {doc.type === "manual" && "Manual e instruções"}
-                          {doc.type === "warranty" && "Termos de garantia"}
-                          {doc.type === "blueprint" && "Planta do imóvel"}
-                          {doc.type === "contract" && "Documentação legal"}
-                        </p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Visualizar
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </CardContent>
-          </Card>
+        <TabsContent value="overview" className="space-y-6">
+          {/* ... keep existing code (overview tab content) */}
         </TabsContent>
         
-        <TabsContent value="features" className="space-y-4 pt-4">
+        <TabsContent value="documents" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Características do Imóvel</CardTitle>
-              <CardDescription>
-                Detalhes técnicos e especificações da sua unidade
-              </CardDescription>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Documentos do Imóvel
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Acesse todos os documentos relacionados ao seu imóvel
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="bg-primary/10">
+                  {property.documents.length} documentos
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium flex items-center gap-2">
-                      <Ruler className="h-4 w-4 text-muted-foreground" />
-                      Dimensões
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <span className="text-sm text-muted-foreground">Área privativa:</span>
-                        <p className="font-medium">{property.size}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Pé direito:</span>
-                        <p className="font-medium">2,80m</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Quartos:</span>
-                        <p className="font-medium">{property.bedrooms}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Banheiros:</span>
-                        <p className="font-medium">{property.bathrooms}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Vagas:</span>
-                        <p className="font-medium">1 vaga</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Andar:</span>
-                        <p className="font-medium">2º andar</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium flex items-center gap-2">
-                      <Home className="h-4 w-4 text-muted-foreground" />
-                      Acabamentos
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <span className="text-sm text-muted-foreground">Piso:</span>
-                        <p className="font-medium">Porcelanato</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Paredes:</span>
-                        <p className="font-medium">Pintura acrílica</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Bancada cozinha:</span>
-                        <p className="font-medium">Granito</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Janelas:</span>
-                        <p className="font-medium">Alumínio</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Portas:</span>
-                        <p className="font-medium">Madeira</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Teto:</span>
-                        <p className="font-medium">Gesso</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium flex items-center gap-2">
-                      <Building className="h-4 w-4 text-muted-foreground" />
-                      Informações do Empreendimento
-                    </h3>
-                    <div className="mt-2 space-y-2">
-                      <div>
-                        <span className="text-sm text-muted-foreground">Nome:</span>
-                        <p className="font-medium">{property.name}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Endereço:</span>
-                        <p className="font-medium">{property.address}, {property.city}-{property.state}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Número de torres:</span>
-                        <p className="font-medium">2 torres</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Unidades por andar:</span>
-                        <p className="font-medium">4 unidades</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Lazer:</span>
-                        <p className="font-medium">Piscina, academia, salão de festas</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      Datas Importantes
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <span className="text-sm text-muted-foreground">Lançamento:</span>
-                        <p className="font-medium">10/01/2023</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Entrega:</span>
-                        <p className="font-medium">{property.deliveryDate}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Vistoria:</span>
-                        <p className="font-medium">10/04/2025</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">Assembleia:</span>
-                        <p className="font-medium">20/04/2025</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end mt-4">
-                <Button variant="outline">
-                  Ver memorial descritivo completo
-                </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {property.documents.map((doc) => (
+                  <DocumentCard key={doc.id} doc={doc} />
+                ))}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="warranty" className="space-y-4 pt-4">
+        <TabsContent value="warranty" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
