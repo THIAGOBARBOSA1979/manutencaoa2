@@ -17,6 +17,7 @@ import {
   Clock,
   CheckCircle
 } from "lucide-react";
+import { propertyService } from "@/services/PropertyService";
 
 // Mock data with enhanced information
 const property = {
@@ -94,6 +95,8 @@ const DocumentCard = ({ doc }: { doc: any }) => {
       case "warranty": return "🛡️";
       case "blueprint": return "📐";
       case "contract": return "📄";
+      case "inspection": return "🔍";
+      case "certificate": return "🏆";
       default: return "📁";
     }
   };
@@ -104,7 +107,17 @@ const DocumentCard = ({ doc }: { doc: any }) => {
       case "warranty": return "from-green-500/10 to-green-600/10 border-green-200";
       case "blueprint": return "from-purple-500/10 to-purple-600/10 border-purple-200";
       case "contract": return "from-orange-500/10 to-orange-600/10 border-orange-200";
+      case "inspection": return "from-teal-500/10 to-teal-600/10 border-teal-200";
+      case "certificate": return "from-yellow-500/10 to-yellow-600/10 border-yellow-200";
       default: return "from-gray-500/10 to-gray-600/10 border-gray-200";
+    }
+  };
+
+  const handleDownload = () => {
+    try {
+      propertyService.downloadDocument(doc.id);
+    } catch (error) {
+      console.error("Erro ao baixar documento:", error);
     }
   };
 
@@ -124,8 +137,13 @@ const DocumentCard = ({ doc }: { doc: any }) => {
                 )}
               </h3>
               <p className="text-xs text-muted-foreground">
-                {doc.size} • Atualizado em {doc.lastModified}
+                {doc.size} • {doc.lastModified}
               </p>
+              {doc.description && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {doc.description}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -134,7 +152,7 @@ const DocumentCard = ({ doc }: { doc: any }) => {
             <Eye size={14} />
             Ver
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 gap-1">
+          <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={handleDownload}>
             <Download size={14} />
             Baixar
           </Button>
@@ -146,6 +164,10 @@ const DocumentCard = ({ doc }: { doc: any }) => {
 
 const ClientProperties = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Get property documents
+  const propertyDocuments = propertyService.getDocumentsByPropertyAndUnit("1", "204");
+  const propertyStats = propertyService.getDocumentStats("1");
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -238,7 +260,7 @@ const ClientProperties = () => {
           </TabsTrigger>
           <TabsTrigger value="documents" className="gap-2">
             <FileText size={16} />
-            Documentos
+            Documentos ({propertyDocuments.length})
           </TabsTrigger>
           <TabsTrigger value="warranty" className="gap-2">
             <ShieldCheck size={16} />
@@ -260,21 +282,65 @@ const ClientProperties = () => {
                     Documentos do Imóvel
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    Acesse todos os documentos relacionados ao seu imóvel
+                    Documentos específicos para {property.name} - Unidade {property.unit}
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="bg-primary/10">
-                  {property.documents.length} documentos
-                </Badge>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="bg-primary/10">
+                    {propertyDocuments.length} documentos
+                  </Badge>
+                  <Badge variant="outline" className="bg-blue-50">
+                    {propertyDocuments.filter(d => d.isNew).length} novos
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
+              {/* Document stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center p-3 bg-muted/30 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{propertyStats.byType.manual}</div>
+                  <div className="text-xs text-muted-foreground">Manuais</div>
+                </div>
+                <div className="text-center p-3 bg-muted/30 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{propertyStats.byType.warranty}</div>
+                  <div className="text-xs text-muted-foreground">Garantias</div>
+                </div>
+                <div className="text-center p-3 bg-muted/30 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">{propertyStats.byType.blueprint}</div>
+                  <div className="text-xs text-muted-foreground">Plantas</div>
+                </div>
+                <div className="text-center p-3 bg-muted/30 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">{propertyStats.byType.contract}</div>
+                  <div className="text-xs text-muted-foreground">Contratos</div>
+                </div>
+              </div>
+
+              {/* Documents grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {property.documents.map((doc) => (
+                {propertyDocuments.map((doc) => (
                   <DocumentCard key={doc.id} doc={doc} />
                 ))}
               </div>
+
+              {propertyDocuments.length === 0 && (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-lg font-medium text-muted-foreground">
+                    Nenhum documento encontrado
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Os documentos do seu imóvel aparecerão aqui quando estiverem disponíveis
+                  </p>
+                </div>
+              )}
             </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">
+                <FileText className="mr-2 h-4 w-4" />
+                Ver todos os documentos no portal
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
         

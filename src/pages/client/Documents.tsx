@@ -7,21 +7,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { 
   FileText, Download, Eye, CheckCircle, Clock, 
   Star, AlertTriangle, Archive, BarChart,
-  Calendar, User, Tag, Filter
+  Calendar, User, Tag, Filter, Building
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { documentService, Document } from "@/services/DocumentService";
+import { propertyService, PropertyDocument } from "@/services/PropertyService";
 import { DocumentPreview } from "@/components/Documents/DocumentPreview";
 import { DocumentSearch } from "@/components/Documents/DocumentSearch";
 import { DocumentBulkActions } from "@/components/Documents/DocumentBulkActions";
-
-interface ClientDocument extends Omit<Document, 'status'> {
-  size?: string;
-  downloadUrl?: string;
-  status: "disponivel" | "processando" | "vencido";
-  description?: string;
-}
+import { PropertySelector } from "@/components/Documents/PropertySelector";
 
 interface SearchFilters {
   query: string;
@@ -29,6 +24,7 @@ interface SearchFilters {
   type: string;
   status: string;
   priority: string;
+  propertyId?: string;
   dateFrom?: Date;
   dateTo?: Date;
   tags: string[];
@@ -36,9 +32,9 @@ interface SearchFilters {
 }
 
 export default function ClientDocuments() {
-  const [documents, setDocuments] = useState<ClientDocument[]>([]);
+  const [documents, setDocuments] = useState<PropertyDocument[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [previewDoc, setPreviewDoc] = useState<ClientDocument | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [previewContent, setPreviewContent] = useState("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
@@ -47,6 +43,7 @@ export default function ClientDocuments() {
     type: 'all',
     status: 'all',
     priority: 'all',
+    propertyId: undefined,
     tags: [],
     favorites: false
   });
@@ -58,41 +55,39 @@ export default function ClientDocuments() {
 
   const loadClientDocuments = () => {
     const clientName = "João Silva";
-    const clientDocs = documentService.getDocumentsByClient(clientName);
-    
-    const formattedDocs: ClientDocument[] = clientDocs.map(doc => ({
-      ...doc,
-      size: doc.fileSize || `${Math.floor(Math.random() * 2000 + 500)} KB`,
-      downloadUrl: doc.fileUrl || `/docs/${doc.title.toLowerCase().replace(/\s+/g, '-')}.pdf`,
-      status: doc.status === "published" ? "disponivel" : "processando" as any,
-      description: getDocumentDescription(doc)
-    }));
-
-    setDocuments(formattedDocs);
+    const propertyDocs = propertyService.getDocumentsByClient(clientName);
+    setDocuments(propertyDocs);
   };
 
-  const getDocumentDescription = (doc: Document): string => {
-    if (doc.type === "auto") {
-      return `Documento gerado automaticamente com base no template`;
-    }
-    return `Documento em formato ${doc.fileName?.split('.').pop()?.toUpperCase() || 'PDF'}`;
-  };
-
-  // Convert ClientDocument to Document for preview component
-  const convertToDocument = (clientDoc: ClientDocument): Document => {
-    const statusMapping: Record<ClientDocument['status'], Document['status']> = {
-      'disponivel': 'published',
-      'processando': 'draft',
-      'vencido': 'archived'
-    };
-
+  // Convert PropertyDocument to Document for preview compatibility
+  const convertToDocument = (propertyDoc: PropertyDocument): Document => {
     return {
-      ...clientDoc,
-      status: statusMapping[clientDoc.status]
+      id: propertyDoc.id,
+      title: propertyDoc.title,
+      type: "manual", // PropertyDocuments are typically manual files
+      category: propertyDoc.category,
+      associatedTo: {
+        property: propertyDoc.propertyId,
+        unit: propertyDoc.unitId
+      },
+      visible: true,
+      createdAt: new Date(propertyDoc.lastModified),
+      updatedAt: new Date(propertyDoc.lastModified),
+      downloads: 0,
+      status: "published" as const,
+      tags: propertyDoc.tags,
+      isFavorite: false,
+      version: 1,
+      priority: propertyDoc.priority,
+      description: propertyDoc.description,
+      createdBy: "Sistema",
+      fileUrl: propertyDoc.downloadUrl,
+      fileName: propertyDoc.title,
+      fileSize: propertyDoc.size
     };
   };
 
-  // Filtros aplicados
+  // Apply filters to documents
   const filteredDocuments = useMemo(() => {
     return documents.filter(doc => {
       if (filters.query && !doc.title.toLowerCase().includes(filters.query.toLowerCase()) &&
@@ -102,26 +97,39 @@ export default function ClientDocuments() {
       }
       if (filters.category !== "all" && doc.category !== filters.category) return false;
       if (filters.type !== "all" && doc.type !== filters.type) return false;
-      if (filters.status !== "all" && doc.status !== filters.status) return false;
       if (filters.priority !== "all" && doc.priority !== filters.priority) return false;
-      if (filters.favorites && !doc.isFavorite) return false;
-      if (filters.dateFrom && doc.createdAt < filters.dateFrom) return false;
-      if (filters.dateTo && doc.createdAt > filters.dateTo) return false;
+      if (filters.propertyId && doc.propertyId !== filters.propertyId) return false;
       if (filters.tags.length > 0 && !filters.tags.some(tag => doc.tags?.includes(tag))) return false;
       
       return true;
     });
   }, [documents, filters]);
 
-  const stats = useMemo(() => ({
-    total: documents.length,
-    disponivel: documents.filter(d => d.status === "disponivel").length,
-    processando: documents.filter(d => d.status === "processando").length,
-    favorites: documents.filter(d => d.isFavorite).length,
-    thisMonth: documents.filter(d => d.createdAt.getMonth() === new Date().getMonth()).length
-  }), [documents]);
+  const stats = useMemo(() => {
+    const filteredByProperty = filters.propertyId 
+      ? documents.filter(d => d.propertyId === filters.propertyId)
+      : documents;
+      
+    return {
+      total: filteredByProperty.length,
+      new: filteredByProperty.filter(d => d.isNew).length,
+      thisMonth: filteredByProperty.filter(d => {
+        const docDate = new Date(d.lastModified);
+        const now = new Date();
+        return docDate.getMonth() === now.getMonth() && docDate.getFullYear() === now.getFullYear();
+      }).length,
+      byProperty: propertyService.getDocumentStats(filters.propertyId)
+    };
+  }, [documents, filters.propertyId]);
 
-  const categories = documentService.getCategories();
+  const categories = [
+    { id: "contrato", name: "Contratos" },
+    { id: "manual", name: "Manuais" },
+    { id: "relatorio", name: "Relatórios" },
+    { id: "certificado", name: "Certificados" },
+    { id: "outros", name: "Outros" }
+  ];
+
   const availableTags = [...new Set(documents.flatMap(doc => doc.tags || []))];
 
   const handleSelectDocument = (id: string, selected: boolean) => {
@@ -134,18 +142,9 @@ export default function ClientDocuments() {
     setSelectedIds(selected ? filteredDocuments.map(doc => doc.id) : []);
   };
 
-  const handleDownload = (doc: ClientDocument) => {
-    if (doc.status === "processando") {
-      toast({
-        title: "Documento não disponível",
-        description: "Este documento ainda está sendo processado.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  const handleDownload = (doc: PropertyDocument) => {
     try {
-      documentService.downloadDocument(doc.id);
+      propertyService.downloadDocument(doc.id);
       toast({
         title: "Download iniciado",
         description: `Baixando ${doc.title}...`
@@ -166,50 +165,11 @@ export default function ClientDocuments() {
     }
   };
 
-  const handlePreview = (doc: ClientDocument) => {
-    if (doc.status === "processando") {
-      toast({
-        title: "Documento não disponível",
-        description: "Este documento ainda está sendo processado.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (doc.type === "auto" && doc.template) {
-      const clientData = {
-        nome_cliente: "João Silva",
-        endereco: "Rua das Flores, 123 - Apt 204",
-        valor: "350.000,00",
-        data: new Date().toLocaleDateString(),
-        empreendimento: "Edifício Aurora",
-        data_vistoria: "15/05/2025",
-        responsavel_vistoria: "Carlos Santos",
-        estado_geral: "Excelente",
-        instalacoes_eletricas: "Conformes",
-        instalacoes_hidraulicas: "Conformes",
-        observacoes: "Imóvel em perfeitas condições"
-      };
-
-      try {
-        const preview = documentService.generateDocument(doc.id, clientData);
-        setPreviewContent(preview);
-        setPreviewDoc(doc);
-        setIsPreviewOpen(true);
-      } catch (error) {
-        toast({
-          title: "Erro ao gerar preview",
-          description: "Não foi possível gerar o preview do documento",
-          variant: "destructive"
-        });
-      }
-    } else {
-      toast({
-        title: "Abrindo documento",
-        description: `Carregando ${doc.title}...`
-      });
-      window.open(doc.downloadUrl, '_blank');
-    }
+  const handlePreview = (doc: PropertyDocument) => {
+    const documentForPreview = convertToDocument(doc);
+    setPreviewDoc(documentForPreview);
+    setPreviewContent(`Preview do documento: ${doc.title}\n\nDescrição: ${doc.description || 'Sem descrição'}`);
+    setIsPreviewOpen(true);
   };
 
   const handleBulkDownload = (ids: string[]) => {
@@ -221,97 +181,134 @@ export default function ClientDocuments() {
   };
 
   const handleBulkDelete = (ids: string[]) => {
-    // Simulação de exclusão em lote
     setDocuments(prev => prev.filter(doc => !ids.includes(doc.id)));
     setSelectedIds([]);
   };
 
   const handleBulkFavorite = (ids: string[]) => {
-    setDocuments(prev => prev.map(doc => 
-      ids.includes(doc.id) ? { ...doc, isFavorite: true } : doc
-    ));
+    // This would be implemented with proper state management
     setSelectedIds([]);
+    toast({
+      title: "Favoritos atualizados",
+      description: `${ids.length} documentos marcados como favoritos`
+    });
   };
 
   const handleBulkArchive = (ids: string[]) => {
-    setDocuments(prev => prev.map(doc => 
-      ids.includes(doc.id) ? { ...doc, status: "vencido" as any } : doc
-    ));
+    // This would be implemented with proper state management  
     setSelectedIds([]);
+    toast({
+      title: "Documentos arquivados",
+      description: `${ids.length} documentos foram arquivados`
+    });
   };
 
-  const DocumentCard = ({ doc }: { doc: ClientDocument }) => (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-start gap-3 flex-1">
-            <Checkbox
-              checked={selectedIds.includes(doc.id)}
-              onCheckedChange={(checked) => handleSelectDocument(doc.id, !!checked)}
-            />
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
-            <div className="space-y-1 flex-1">
-              <h3 className="font-medium leading-none">{doc.title}</h3>
-              {doc.description && (
-                <p className="text-sm text-muted-foreground">{doc.description}</p>
-              )}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                {doc.createdAt.toLocaleDateString()}
-                <Separator orientation="vertical" className="h-3" />
-                <span>{doc.size}</span>
-                <Separator orientation="vertical" className="h-3" />
-                <span>{doc.downloads} downloads</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={doc.type === "auto" ? "default" : "secondary"} className="text-xs">
-                  {doc.type === "auto" ? "Automático" : "Manual"}
-                </Badge>
-                <Badge variant={doc.status === "disponivel" ? "default" : doc.status === "processando" ? "secondary" : "destructive"} className="text-xs">
-                  {doc.status === "disponivel" ? "Disponível" : doc.status === "processando" ? "Processando" : "Vencido"}
-                </Badge>
-                {doc.isFavorite && (
-                  <Badge variant="outline" className="text-xs">
-                    <Star className="h-3 w-3 mr-1 fill-current text-yellow-500" />
-                    Favorito
-                  </Badge>
+  const DocumentCard = ({ doc }: { doc: PropertyDocument }) => {
+    const property = propertyService.getPropertyById(doc.propertyId);
+    
+    const getDocumentIcon = (type: string) => {
+      switch (type) {
+        case "manual": return "📋";
+        case "warranty": return "🛡️";
+        case "blueprint": return "📐";
+        case "contract": return "📄";
+        case "inspection": return "🔍";
+        case "certificate": return "🏆";
+        default: return "📁";
+      }
+    };
+
+    const getDocumentColor = (type: string) => {
+      switch (type) {
+        case "manual": return "from-blue-500/10 to-blue-600/10 border-blue-200";
+        case "warranty": return "from-green-500/10 to-green-600/10 border-green-200";
+        case "blueprint": return "from-purple-500/10 to-purple-600/10 border-purple-200";
+        case "contract": return "from-orange-500/10 to-orange-600/10 border-orange-200";
+        case "inspection": return "from-teal-500/10 to-teal-600/10 border-teal-200";
+        case "certificate": return "from-yellow-500/10 to-yellow-600/10 border-yellow-200";
+        default: return "from-gray-500/10 to-gray-600/10 border-gray-200";
+      }
+    };
+
+    return (
+      <Card className={`hover:shadow-md transition-shadow bg-gradient-to-br ${getDocumentColor(doc.type)} border`}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-start gap-3 flex-1">
+              <Checkbox
+                checked={selectedIds.includes(doc.id)}
+                onCheckedChange={(checked) => handleSelectDocument(doc.id, !!checked)}
+              />
+              <div className="text-2xl">{getDocumentIcon(doc.type)}</div>
+              <div className="space-y-1 flex-1">
+                <h3 className="font-medium leading-none flex items-center gap-2">
+                  {doc.title}
+                  {doc.isNew && (
+                    <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
+                      Novo
+                    </Badge>
+                  )}
+                </h3>
+                {doc.description && (
+                  <p className="text-sm text-muted-foreground">{doc.description}</p>
                 )}
-                {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {tag}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(doc.lastModified).toLocaleDateString()}
+                  <Separator orientation="vertical" className="h-3" />
+                  <span>{doc.size}</span>
+                  {property && (
+                    <>
+                      <Separator orientation="vertical" className="h-3" />
+                      <Building className="h-3 w-3" />
+                      <span>{property.name}</span>
+                      {doc.unitId && <span>- Unidade {doc.unitId}</span>}
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    {doc.category}
                   </Badge>
-                ))}
+                  <Badge 
+                    variant={doc.priority === "high" ? "destructive" : doc.priority === "medium" ? "default" : "secondary"} 
+                    className="text-xs"
+                  >
+                    {doc.priority === "high" ? "Alta" : doc.priority === "medium" ? "Média" : "Baixa"}
+                  </Badge>
+                  {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => handlePreview(doc)}
+              >
+                <Eye className="h-4 w-4" />
+                Ver
+              </Button>
+              <Button 
+                size="sm" 
+                className="gap-2"
+                onClick={() => handleDownload(doc)}
+              >
+                <Download className="h-4 w-4" />
+                Baixar
+              </Button>
+            </div>
           </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="gap-2"
-              onClick={() => handlePreview(doc)}
-              disabled={doc.status === "processando"}
-            >
-              <Eye className="h-4 w-4" />
-              {doc.type === "auto" ? "Preview" : "Abrir"}
-            </Button>
-            <Button 
-              size="sm" 
-              className="gap-2"
-              onClick={() => handleDownload(doc)}
-              disabled={doc.status === "processando"}
-            >
-              <Download className="h-4 w-4" />
-              Baixar
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -322,23 +319,19 @@ export default function ClientDocuments() {
           Meus Documentos
         </h1>
         <p className="text-muted-foreground mt-1">
-          Acesse e gerencie seus documentos relacionados ao imóvel
+          Acesse e gerencie seus documentos relacionados aos imóveis
         </p>
       </div>
 
       <Tabs defaultValue="all" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="all">
             <FileText className="h-4 w-4 mr-2" />
             Todos ({stats.total})
           </TabsTrigger>
-          <TabsTrigger value="favorites">
+          <TabsTrigger value="new">
             <Star className="h-4 w-4 mr-2" />
-            Favoritos ({stats.favorites})
-          </TabsTrigger>
-          <TabsTrigger value="recent">
-            <Clock className="h-4 w-4 mr-2" />
-            Recentes
+            Novos ({stats.new})
           </TabsTrigger>
           <TabsTrigger value="contracts">
             <Archive className="h-4 w-4 mr-2" />
@@ -368,21 +361,10 @@ export default function ClientDocuments() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Disponíveis</p>
-                    <p className="text-2xl font-bold text-green-600">{stats.disponivel}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Novos</p>
+                    <p className="text-2xl font-bold text-blue-600">{stats.new}</p>
                   </div>
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Processando</p>
-                    <p className="text-2xl font-bold text-yellow-600">{stats.processando}</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-yellow-600" />
+                  <Star className="h-8 w-8 text-blue-600" />
                 </div>
               </CardContent>
             </Card>
@@ -391,13 +373,30 @@ export default function ClientDocuments() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Este Mês</p>
-                    <p className="text-2xl font-bold text-blue-600">{stats.thisMonth}</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.thisMonth}</p>
                   </div>
-                  <Calendar className="h-8 w-8 text-blue-600" />
+                  <Calendar className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Prioridade Alta</p>
+                    <p className="text-2xl font-bold text-red-600">{stats.byProperty.byPriority.high}</p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-red-600" />
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Property Selector */}
+          <PropertySelector
+            selectedPropertyId={filters.propertyId}
+            onPropertyChange={(propertyId) => setFilters(prev => ({ ...prev, propertyId }))}
+          />
 
           {/* Search and Filters */}
           <DocumentSearch
@@ -443,7 +442,7 @@ export default function ClientDocuments() {
                     Nenhum documento encontrado
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Tente ajustar os filtros de busca
+                    Tente ajustar os filtros de busca ou selecionar outro imóvel
                   </p>
                 </CardContent>
               </Card>
@@ -451,22 +450,11 @@ export default function ClientDocuments() {
           </div>
         </TabsContent>
 
-        <TabsContent value="favorites">
+        <TabsContent value="new">
           <div className="grid gap-4">
-            {documents.filter(d => d.isFavorite).map((doc) => (
+            {documents.filter(d => d.isNew).map((doc) => (
               <DocumentCard key={doc.id} doc={doc} />
             ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="recent">
-          <div className="grid gap-4">
-            {documents
-              .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-              .slice(0, 10)
-              .map((doc) => (
-                <DocumentCard key={doc.id} doc={doc} />
-              ))}
           </div>
         </TabsContent>
 
@@ -506,12 +494,12 @@ export default function ClientDocuments() {
               <CardContent>
                 <div className="space-y-3">
                   {documents
-                    .sort((a, b) => b.downloads - a.downloads)
+                    .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
                     .slice(0, 5)
                     .map(doc => (
                       <div key={doc.id} className="flex justify-between items-center">
                         <span className="text-sm">{doc.title}</span>
-                        <Badge variant="outline">{doc.downloads} downloads</Badge>
+                        <Badge variant="outline">0 downloads</Badge>
                       </div>
                     ))}
                 </div>
@@ -523,7 +511,7 @@ export default function ClientDocuments() {
 
       {/* Preview Dialog */}
       <DocumentPreview
-        document={previewDoc ? convertToDocument(previewDoc) : null}
+        document={previewDoc}
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         onDownload={handleDownloadById}
