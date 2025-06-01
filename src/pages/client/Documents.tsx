@@ -1,30 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
-  FileText, Download, Search, Calendar, Eye, Filter, Clock, CheckCircle, 
-  Star, AlertTriangle, Archive, BarChart
+  FileText, Download, Eye, CheckCircle, Clock, 
+  Star, AlertTriangle, Archive, BarChart,
+  Calendar, User, Tag, Filter
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { documentService, Document } from "@/services/DocumentService";
+import { DocumentPreview } from "@/components/Documents/DocumentPreview";
+import { DocumentSearch } from "@/components/Documents/DocumentSearch";
+import { DocumentBulkActions } from "@/components/Documents/DocumentBulkActions";
 
 interface ClientDocument extends Omit<Document, 'status'> {
   size?: string;
@@ -33,49 +23,33 @@ interface ClientDocument extends Omit<Document, 'status'> {
   description?: string;
 }
 
-const getTypeLabel = (type: string) => {
-  const types = {
-    auto: "Automático",
-    manual: "Manual"
-  };
-  return types[type as keyof typeof types] || type;
-};
-
-const getTypeColor = (type: string) => {
-  const colors = {
-    auto: "default",
-    manual: "secondary"
-  };
-  return colors[type as keyof typeof colors] || "outline";
-};
-
-const getStatusColor = (status: string) => {
-  const colors = {
-    disponivel: "default",
-    processando: "secondary",
-    vencido: "destructive"
-  };
-  return colors[status as keyof typeof colors] || "outline";
-};
-
-const getStatusLabel = (status: string) => {
-  const labels = {
-    disponivel: "Disponível",
-    processando: "Processando",
-    vencido: "Vencido"
-  };
-  return labels[status as keyof typeof labels] || status;
-};
+interface SearchFilters {
+  query: string;
+  category: string;
+  type: string;
+  status: string;
+  priority: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  tags: string[];
+  favorites: boolean;
+}
 
 export default function ClientDocuments() {
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [previewDoc, setPreviewDoc] = useState<ClientDocument | null>(null);
   const [previewContent, setPreviewContent] = useState("");
-  const [previewTitle, setPreviewTitle] = useState("");
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [filters, setFilters] = useState<SearchFilters>({
+    query: '',
+    category: 'all',
+    type: 'all',
+    status: 'all',
+    priority: 'all',
+    tags: [],
+    favorites: false
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -83,11 +57,9 @@ export default function ClientDocuments() {
   }, []);
 
   const loadClientDocuments = () => {
-    // Simular cliente logado
     const clientName = "João Silva";
     const clientDocs = documentService.getDocumentsByClient(clientName);
     
-    // Converter para formato do cliente
     const formattedDocs: ClientDocument[] = clientDocs.map(doc => ({
       ...doc,
       size: doc.fileSize || `${Math.floor(Math.random() * 2000 + 500)} KB`,
@@ -106,19 +78,47 @@ export default function ClientDocuments() {
     return `Documento em formato ${doc.fileName?.split('.').pop()?.toUpperCase() || 'PDF'}`;
   };
 
-  const filteredDocuments = documents.filter(doc => {
-    if (search && !doc.title.toLowerCase().includes(search.toLowerCase())) return false;
-    if (typeFilter !== "all" && doc.type !== typeFilter) return false;
-    if (statusFilter !== "all" && doc.status !== statusFilter) return false;
-    return true;
-  });
+  // Filtros aplicados
+  const filteredDocuments = useMemo(() => {
+    return documents.filter(doc => {
+      if (filters.query && !doc.title.toLowerCase().includes(filters.query.toLowerCase()) &&
+          !doc.description?.toLowerCase().includes(filters.query.toLowerCase()) &&
+          !doc.tags?.some(tag => tag.toLowerCase().includes(filters.query.toLowerCase()))) {
+        return false;
+      }
+      if (filters.category !== "all" && doc.category !== filters.category) return false;
+      if (filters.type !== "all" && doc.type !== filters.type) return false;
+      if (filters.status !== "all" && doc.status !== filters.status) return false;
+      if (filters.priority !== "all" && doc.priority !== filters.priority) return false;
+      if (filters.favorites && !doc.isFavorite) return false;
+      if (filters.dateFrom && doc.createdAt < filters.dateFrom) return false;
+      if (filters.dateTo && doc.createdAt > filters.dateTo) return false;
+      if (filters.tags.length > 0 && !filters.tags.some(tag => doc.tags?.includes(tag))) return false;
+      
+      return true;
+    });
+  }, [documents, filters]);
 
-  const groupedDocuments = filteredDocuments.reduce((acc, doc) => {
-    const category = doc.type === "auto" ? "Automáticos" : "Manuais";
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(doc);
-    return acc;
-  }, {} as Record<string, ClientDocument[]>);
+  const stats = useMemo(() => ({
+    total: documents.length,
+    disponivel: documents.filter(d => d.status === "disponivel").length,
+    processando: documents.filter(d => d.status === "processando").length,
+    favorites: documents.filter(d => d.isFavorite).length,
+    thisMonth: documents.filter(d => d.createdAt.getMonth() === new Date().getMonth()).length
+  }), [documents]);
+
+  const categories = documentService.getCategories();
+  const availableTags = [...new Set(documents.flatMap(doc => doc.tags || []))];
+
+  const handleSelectDocument = (id: string, selected: boolean) => {
+    setSelectedIds(prev => 
+      selected ? [...prev, id] : prev.filter(selectedId => selectedId !== id)
+    );
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    setSelectedIds(selected ? filteredDocuments.map(doc => doc.id) : []);
+  };
 
   const handleDownload = (doc: ClientDocument) => {
     if (doc.status === "processando") {
@@ -156,7 +156,6 @@ export default function ClientDocuments() {
     }
 
     if (doc.type === "auto" && doc.template) {
-      // Gerar preview com dados do cliente
       const clientData = {
         nome_cliente: "João Silva",
         endereco: "Rua das Flores, 123 - Apt 204",
@@ -174,7 +173,7 @@ export default function ClientDocuments() {
       try {
         const preview = documentService.generateDocument(doc.id, clientData);
         setPreviewContent(preview);
-        setPreviewTitle(doc.title);
+        setPreviewDoc(doc);
         setIsPreviewOpen(true);
       } catch (error) {
         toast({
@@ -184,7 +183,6 @@ export default function ClientDocuments() {
         });
       }
     } else {
-      // Para documentos manuais, simular abertura
       toast({
         title: "Abrindo documento",
         description: `Carregando ${doc.title}...`
@@ -193,15 +191,106 @@ export default function ClientDocuments() {
     }
   };
 
-  const categories = documentService.getCategories();
-  
-  const stats = {
-    total: documents.length,
-    disponivel: documents.filter(d => d.status === "disponivel").length,
-    processando: documents.filter(d => d.status === "processando").length,
-    thisMonth: documents.filter(d => d.createdAt.getMonth() === new Date().getMonth()).length,
-    favorites: documents.filter(d => d.isFavorite).length
+  const handleBulkDownload = (ids: string[]) => {
+    ids.forEach(id => {
+      const doc = documents.find(d => d.id === id);
+      if (doc) handleDownload(doc);
+    });
+    setSelectedIds([]);
   };
+
+  const handleBulkDelete = (ids: string[]) => {
+    // Simulação de exclusão em lote
+    setDocuments(prev => prev.filter(doc => !ids.includes(doc.id)));
+    setSelectedIds([]);
+  };
+
+  const handleBulkFavorite = (ids: string[]) => {
+    setDocuments(prev => prev.map(doc => 
+      ids.includes(doc.id) ? { ...doc, isFavorite: true } : doc
+    ));
+    setSelectedIds([]);
+  };
+
+  const handleBulkArchive = (ids: string[]) => {
+    setDocuments(prev => prev.map(doc => 
+      ids.includes(doc.id) ? { ...doc, status: "vencido" as any } : doc
+    ));
+    setSelectedIds([]);
+  };
+
+  const DocumentCard = ({ doc }: { doc: ClientDocument }) => (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-start gap-3 flex-1">
+            <Checkbox
+              checked={selectedIds.includes(doc.id)}
+              onCheckedChange={(checked) => handleSelectDocument(doc.id, !!checked)}
+            />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div className="space-y-1 flex-1">
+              <h3 className="font-medium leading-none">{doc.title}</h3>
+              {doc.description && (
+                <p className="text-sm text-muted-foreground">{doc.description}</p>
+              )}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                {doc.createdAt.toLocaleDateString()}
+                <Separator orientation="vertical" className="h-3" />
+                <span>{doc.size}</span>
+                <Separator orientation="vertical" className="h-3" />
+                <span>{doc.downloads} downloads</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={doc.type === "auto" ? "default" : "secondary"} className="text-xs">
+                  {doc.type === "auto" ? "Automático" : "Manual"}
+                </Badge>
+                <Badge variant={doc.status === "disponivel" ? "default" : doc.status === "processando" ? "secondary" : "destructive"} className="text-xs">
+                  {doc.status === "disponivel" ? "Disponível" : doc.status === "processando" ? "Processando" : "Vencido"}
+                </Badge>
+                {doc.isFavorite && (
+                  <Badge variant="outline" className="text-xs">
+                    <Star className="h-3 w-3 mr-1 fill-current text-yellow-500" />
+                    Favorito
+                  </Badge>
+                )}
+                {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="gap-2"
+              onClick={() => handlePreview(doc)}
+              disabled={doc.status === "processando"}
+            >
+              <Eye className="h-4 w-4" />
+              {doc.type === "auto" ? "Preview" : "Abrir"}
+            </Button>
+            <Button 
+              size="sm" 
+              className="gap-2"
+              onClick={() => handleDownload(doc)}
+              disabled={doc.status === "processando"}
+            >
+              <Download className="h-4 w-4" />
+              Baixar
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -212,7 +301,7 @@ export default function ClientDocuments() {
           Meus Documentos
         </h1>
         <p className="text-muted-foreground mt-1">
-          Acesse e baixe seus documentos relacionados ao imóvel
+          Acesse e gerencie seus documentos relacionados ao imóvel
         </p>
       </div>
 
@@ -220,11 +309,11 @@ export default function ClientDocuments() {
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">
             <FileText className="h-4 w-4 mr-2" />
-            Todos
+            Todos ({stats.total})
           </TabsTrigger>
           <TabsTrigger value="favorites">
             <Star className="h-4 w-4 mr-2" />
-            Favoritos
+            Favoritos ({stats.favorites})
           </TabsTrigger>
           <TabsTrigger value="recent">
             <Clock className="h-4 w-4 mr-2" />
@@ -289,119 +378,55 @@ export default function ClientDocuments() {
             </Card>
           </div>
 
-          {/* Enhanced Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar documentos por título ou descrição..."
-                    className="pl-8"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas categorias</SelectItem>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os tipos</SelectItem>
-                    <SelectItem value="auto">Automáticos</SelectItem>
-                    <SelectItem value="manual">Manuais</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos status</SelectItem>
-                    <SelectItem value="disponivel">Disponível</SelectItem>
-                    <SelectItem value="processando">Processando</SelectItem>
-                    <SelectItem value="vencido">Vencido</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Search and Filters */}
+          <DocumentSearch
+            filters={filters}
+            onFiltersChange={setFilters}
+            categories={categories}
+            availableTags={availableTags}
+          />
 
-          {/* Enhanced Documents Grid */}
+          {/* Bulk Actions */}
+          <DocumentBulkActions
+            selectedIds={selectedIds}
+            onClearSelection={() => setSelectedIds([])}
+            onBulkDownload={handleBulkDownload}
+            onBulkDelete={handleBulkDelete}
+            onBulkFavorite={handleBulkFavorite}
+            onBulkArchive={handleBulkArchive}
+          />
+
+          {/* Select All */}
+          {filteredDocuments.length > 0 && (
+            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+              <Checkbox
+                checked={selectedIds.length === filteredDocuments.length}
+                onCheckedChange={handleSelectAll}
+              />
+              <span className="text-sm font-medium">
+                Selecionar todos ({filteredDocuments.length} documentos)
+              </span>
+            </div>
+          )}
+
+          {/* Documents Grid */}
           <div className="grid gap-3">
             {filteredDocuments.map((doc) => (
-              <Card key={doc.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="space-y-1 flex-1">
-                        <h3 className="font-medium leading-none">{doc.title}</h3>
-                        {doc.description && (
-                          <p className="text-sm text-muted-foreground">{doc.description}</p>
-                        )}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {doc.createdAt.toLocaleDateString()}
-                          <Separator orientation="vertical" className="h-3" />
-                          <span>{doc.size}</span>
-                          <Separator orientation="vertical" className="h-3" />
-                          <span>{doc.downloads} downloads</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={getTypeColor(doc.type) as any} className="text-xs">
-                            {getTypeLabel(doc.type)}
-                          </Badge>
-                          <Badge variant={getStatusColor(doc.status) as any} className="text-xs">
-                            {getStatusLabel(doc.status)}
-                          </Badge>
-                          {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="gap-2"
-                        onClick={() => handlePreview(doc)}
-                        disabled={doc.status === "processando"}
-                      >
-                        <Eye className="h-4 w-4" />
-                        {doc.type === "auto" ? "Preview" : "Abrir"}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="gap-2"
-                        onClick={() => handleDownload(doc)}
-                        disabled={doc.status === "processando"}
-                      >
-                        <Download className="h-4 w-4" />
-                        Baixar
-                      </Button>
-                    </div>
-                  </div>
+              <DocumentCard key={doc.id} doc={doc} />
+            ))}
+            {filteredDocuments.length === 0 && (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-lg font-medium text-muted-foreground">
+                    Nenhum documento encontrado
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Tente ajustar os filtros de busca
+                  </p>
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
         </TabsContent>
 
@@ -429,11 +454,11 @@ export default function ClientDocuments() {
                           <span>{doc.downloads} downloads</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={getTypeColor(doc.type) as any} className="text-xs">
-                            {getTypeLabel(doc.type)}
+                          <Badge variant={doc.type === "auto" ? "default" : "secondary"} className="text-xs">
+                            {doc.type === "auto" ? "Automático" : "Manual"}
                           </Badge>
-                          <Badge variant={getStatusColor(doc.status) as any} className="text-xs">
-                            {getStatusLabel(doc.status)}
+                          <Badge variant={doc.status === "disponivel" ? "default" : doc.status === "processando" ? "secondary" : "destructive"} className="text-xs">
+                            {doc.status === "disponivel" ? "Disponível" : doc.status === "processando" ? "Processando" : "Vencido"}
                           </Badge>
                           {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
@@ -499,11 +524,11 @@ export default function ClientDocuments() {
                             <span>{doc.downloads} downloads</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant={getTypeColor(doc.type) as any} className="text-xs">
-                              {getTypeLabel(doc.type)}
+                            <Badge variant={doc.type === "auto" ? "default" : "secondary"} className="text-xs">
+                              {doc.type === "auto" ? "Automático" : "Manual"}
                             </Badge>
-                            <Badge variant={getStatusColor(doc.status) as any} className="text-xs">
-                              {getStatusLabel(doc.status)}
+                            <Badge variant={doc.status === "disponivel" ? "default" : doc.status === "processando" ? "secondary" : "destructive"} className="text-xs">
+                              {doc.status === "disponivel" ? "Disponível" : doc.status === "processando" ? "Processando" : "Vencido"}
                             </Badge>
                             {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
@@ -566,11 +591,11 @@ export default function ClientDocuments() {
                           <span>{doc.downloads} downloads</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={getTypeColor(doc.type) as any} className="text-xs">
-                            {getTypeLabel(doc.type)}
+                          <Badge variant={doc.type === "auto" ? "default" : "secondary"} className="text-xs">
+                            {doc.type === "auto" ? "Automático" : "Manual"}
                           </Badge>
-                          <Badge variant={getStatusColor(doc.status) as any} className="text-xs">
-                            {getStatusLabel(doc.status)}
+                          <Badge variant={doc.status === "disponivel" ? "default" : doc.status === "processando" ? "secondary" : "destructive"} className="text-xs">
+                            {doc.status === "disponivel" ? "Disponível" : doc.status === "processando" ? "Processando" : "Vencido"}
                           </Badge>
                           {doc.tags && doc.tags.slice(0, 2).map((tag, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
@@ -653,28 +678,13 @@ export default function ClientDocuments() {
       </Tabs>
 
       {/* Preview Dialog */}
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Preview: {previewTitle}</DialogTitle>
-            <DialogDescription>
-              Visualização do documento gerado
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto">
-            <div className="p-4 bg-white border rounded">
-              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                {previewContent}
-              </pre>
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={() => setIsPreviewOpen(false)}>
-              Fechar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DocumentPreview
+        document={previewDoc}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        onDownload={handleDownload}
+        content={previewContent}
+      />
     </div>
   );
 }
