@@ -88,6 +88,25 @@ const warrantyClaims = [
         text: "Reparo concluído com sucesso.",
       }
     ]
+  },
+  {
+    id: "4",
+    title: "Vazamento na pia",
+    description: "Vazamento detectado na tubulação da pia da cozinha.",
+    property: "Edifício Aurora",
+    unit: "204",
+    createdAt: new Date(2025, 4, 8),
+    status: "pending" as const,
+    category: "Hidráulica",
+    priority: "medium",
+    updates: [
+      {
+        id: "1",
+        date: new Date(2025, 4, 8),
+        author: "Sistema",
+        text: "Solicitação registrada com sucesso.",
+      }
+    ]
   }
 ];
 

@@ -63,6 +63,21 @@ const inspections = [
     ],
     canStart: false,
     report: "https://example.com/report.pdf"
+  },
+  {
+    id: "4",
+    title: "Vistoria em Andamento",
+    property: "Edifício Aurora",
+    unit: "204",
+    scheduledDate: new Date(2025, 4, 12, 14, 0),
+    status: "progress" as const,
+    inspector: "Ana Costa",
+    description: "Vistoria de acompanhamento em execução.",
+    checklist: [
+      { id: "1", name: "Verificação de instalações", completed: true },
+      { id: "2", name: "Teste de funcionamento", completed: false },
+    ],
+    canStart: false
   }
 ];
 
@@ -274,6 +289,43 @@ const ClientInspections = () => {
       )}
     </div>
   );
+
+  function handleStartInspection(inspectionId: string) {
+    setActiveInspection(inspectionId);
+    setStartInspectionOpen(true);
+  }
+
+  function handleInspectionComplete(data: any) {
+    console.log("Inspection completed:", data);
+    
+    toast({
+      title: "Vistoria concluída com sucesso",
+      description: "O relatório será processado e estará disponível em breve.",
+    });
+    
+    setStartInspectionOpen(false);
+  }
+
+  function handleConfirmPresence() {
+    toast({
+      title: "Presença confirmada",
+      description: "Obrigado por confirmar sua presença na vistoria.",
+    });
+  }
+
+  function handleRequestReschedule() {
+    toast({
+      title: "Solicitação de remarcação enviada",
+      description: "Em breve entraremos em contato para agendar uma nova data.",
+    });
+  }
+
+  function handleExportData() {
+    toast({
+      title: "Exportação iniciada",
+      description: "Os dados serão enviados para seu e-mail quando estiverem prontos.",
+    });
+  }
 };
 
 export default ClientInspections;
