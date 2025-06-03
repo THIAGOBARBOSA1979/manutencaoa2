@@ -1,15 +1,16 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar, ClipboardCheck, User, MapPin, List, CheckCircle, Clock, FileText } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ClipboardCheck, Plus, Filter, Download } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { StartInspectionDialog } from "@/components/Inspection/StartInspectionDialog";
+import { InspectionCard } from "@/components/Inspection/InspectionCard";
+import { InspectionSummary } from "@/components/Inspection/InspectionSummary";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock data
+// Mock data - enhanced with more realistic information
 const inspections = [
   {
     id: "1",
@@ -65,28 +66,39 @@ const inspections = [
   }
 ];
 
-// Helper component for the checklist status badges
-const Badge = ({ status }: { status: boolean }) => {
-  return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-      status 
-        ? "bg-green-100 text-green-800" 
-        : "bg-amber-100 text-amber-800"
-    }`}>
-      {status ? "Concluído" : "Pendente"}
-    </span>
-  );
-};
-
 const ClientInspections = () => {
   const [selectedInspection, setSelectedInspection] = useState<string | null>(null);
   const [startInspectionOpen, setStartInspectionOpen] = useState(false);
   const [activeInspection, setActiveInspection] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("all");
   const { toast } = useToast();
   
   const inspection = selectedInspection 
     ? inspections.find(i => i.id === selectedInspection) 
     : null;
+
+  // Calculate statistics
+  const stats = {
+    total: inspections.length,
+    pending: inspections.filter(i => i.status === "pending").length,
+    inProgress: inspections.filter(i => i.status === "progress").length,
+    completed: inspections.filter(i => i.status === "complete").length,
+    upcoming: inspections.filter(i => i.scheduledDate > new Date()).length
+  };
+
+  // Filter inspections based on active tab
+  const getFilteredInspections = () => {
+    switch (activeTab) {
+      case "pending":
+        return inspections.filter(i => i.status === "pending");
+      case "completed":
+        return inspections.filter(i => i.status === "complete");
+      case "upcoming":
+        return inspections.filter(i => i.scheduledDate > new Date());
+      default:
+        return inspections;
+    }
+  };
 
   const handleStartInspection = (inspectionId: string) => {
     setActiveInspection(inspectionId);
@@ -96,13 +108,11 @@ const ClientInspections = () => {
   const handleInspectionComplete = (data: any) => {
     console.log("Inspection completed:", data);
     
-    // Update the inspection status (in a real app, this would update state or refresh data)
     toast({
       title: "Vistoria concluída com sucesso",
       description: "O relatório será processado e estará disponível em breve.",
     });
     
-    // In a real app, you would refresh the data or update the state
     setStartInspectionOpen(false);
   };
 
@@ -120,252 +130,135 @@ const ClientInspections = () => {
     });
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <ClipboardCheck className="h-8 w-8" />
-          Minhas Vistorias
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Acompanhe as vistorias agendadas para o seu imóvel
-        </p>
-      </div>
+  const handleExportData = () => {
+    toast({
+      title: "Exportação iniciada",
+      description: "Os dados serão enviados para seu e-mail quando estiverem prontos.",
+    });
+  };
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Inspections list */}
-        <div className="lg:col-span-1 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vistorias Agendadas</CardTitle>
-              <CardDescription>
-                Selecione uma vistoria para ver detalhes
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {inspections.map((item) => (
-                <div 
-                  key={item.id} 
-                  className={`p-3 border rounded-md cursor-pointer transition-colors ${
-                    selectedInspection === item.id 
-                      ? "border-primary bg-primary/5" 
-                      : "hover:bg-accent"
-                  }`}
-                  onClick={() => setSelectedInspection(item.id)}
-                >
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium">{item.title}</h3>
-                    <StatusBadge status={item.status} />
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                    <Calendar className="h-3 w-3" />
-                    <span>{format(item.scheduledDate, "dd/MM/yyyy 'às' HH:mm")}</span>
-                  </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Enhanced Header */}
+        <div className="bg-white rounded-2xl shadow-sm border p-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
+                  <ClipboardCheck className="h-8 w-8 text-primary" />
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Precisa de ajuda?</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Se você precisar remarcar uma vistoria ou tiver dúvidas sobre o processo, entre em contato com nossa equipe.
+                Minhas Vistorias
+              </h1>
+              <p className="text-muted-foreground mt-2 text-lg">
+                Acompanhe e gerencie suas vistorias agendadas
               </p>
-              <Button variant="outline" className="w-full">
-                Falar com a equipe
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={handleExportData}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
               </Button>
-            </CardContent>
-          </Card>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Solicitar Vistoria
+              </Button>
+            </div>
+          </div>
         </div>
-        
-        {/* Inspection details */}
-        <div className="lg:col-span-2">
-          {inspection ? (
-            <Tabs defaultValue="details">
-              <TabsList>
-                <TabsTrigger value="details">Detalhes</TabsTrigger>
-                <TabsTrigger value="checklist">Checklist</TabsTrigger>
-                {inspection.status === "complete" && (
-                  <TabsTrigger value="report">Relatório</TabsTrigger>
-                )}
-              </TabsList>
-              
-              <TabsContent value="details" className="space-y-4 pt-4">
-                <Card>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-2xl">{inspection.title}</CardTitle>
-                        <CardDescription>
-                          {format(inspection.scheduledDate, "dd 'de' MMMM 'de' yyyy 'às' HH:mm")}
-                        </CardDescription>
-                      </div>
-                      <StatusBadge status={inspection.status} />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span>{inspection.property} - Unidade {inspection.unit}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span>Vistoriador: {inspection.inspector}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>Duração estimada: 1 hora</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="font-medium">Descrição:</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {inspection.description}
+
+        {/* Statistics Summary */}
+        <InspectionSummary
+          totalInspections={stats.total}
+          pendingInspections={stats.pending}
+          inProgressInspections={stats.inProgress}
+          completedInspections={stats.completed}
+          upcomingInspections={stats.upcoming}
+        />
+
+        {/* Enhanced Content Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Inspections List */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle>Vistorias</CardTitle>
+                <CardDescription>
+                  Selecione uma vistoria para ver detalhes
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="all">Todas</TabsTrigger>
+                    <TabsTrigger value="pending">Pendentes</TabsTrigger>
+                    <TabsTrigger value="completed">Concluídas</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {getFilteredInspections().map((item) => (
+                      <InspectionCard
+                        key={item.id}
+                        inspection={item}
+                        variant="compact"
+                        isSelected={selectedInspection === item.id}
+                        onSelect={() => setSelectedInspection(item.id)}
+                      />
+                    ))}
+                    
+                    {getFilteredInspections().length === 0 && (
+                      <div className="text-center py-8">
+                        <ClipboardCheck className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                        <p className="text-muted-foreground">
+                          Nenhuma vistoria encontrada
                         </p>
                       </div>
-                    </div>
-                    
-                    <div className="pt-2 border-t">
-                      <h3 className="font-medium mb-2">Próximos passos:</h3>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span>Compareça no horário agendado</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span>Traga um documento com foto</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span>Anote todas as observações durante a vistoria</span>
-                        </li>
-                      </ul>
-                    </div>
-                    
-                    <div className="flex justify-between pt-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={handleRequestReschedule}
-                      >
-                        Solicitar remarcação
-                      </Button>
-                      
-                      {inspection.canStart ? (
-                        <Button 
-                          onClick={() => handleStartInspection(inspection.id)}
-                        >
-                          <ClipboardCheck className="h-4 w-4 mr-2" />
-                          Iniciar Vistoria
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={handleConfirmPresence}
-                          disabled={inspection.status === "complete"}
-                        >
-                          {inspection.status === "complete" ? "Vistoria Concluída" : "Confirmar presença"}
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="checklist" className="space-y-4 pt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Checklist da Vistoria</CardTitle>
-                    <CardDescription>
-                      Itens que serão verificados durante a vistoria
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="border rounded-md overflow-hidden">
-                        <table className="w-full">
-                          <thead className="bg-muted">
-                            <tr>
-                              <th className="py-3 px-4 text-left">Item</th>
-                              <th className="py-3 px-4 text-right w-24">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y">
-                            {inspection.checklist.map(item => (
-                              <tr key={item.id}>
-                                <td className="py-3 px-4">{item.name}</td>
-                                <td className="py-3 px-4 text-right">
-                                  <Badge status={item.completed} />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Este checklist é apenas informativo. Os itens serão verificados pelo vistoriador durante o processo.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              {inspection.status === "complete" && (
-                <TabsContent value="report" className="space-y-4 pt-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Relatório de Vistoria</CardTitle>
-                      <CardDescription>
-                        Documentação completa com os resultados da vistoria
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="border rounded-md p-4 space-y-2">
-                        <div className="flex items-start">
-                          <FileText className="h-10 w-10 text-primary mr-3 mt-1" />
-                          <div>
-                            <h3 className="font-medium">Relatório de Vistoria - {inspection.title}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Finalizado em {format(new Date(2025, 3, 10), "dd/MM/yyyy")}
-                            </p>
-                            <div className="mt-2">
-                              <Button variant="outline" size="sm">
-                                Visualizar PDF
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="border rounded-md p-4">
-                        <h3 className="font-medium mb-2">Resumo</h3>
-                        <div className="space-y-1 text-sm">
-                          <p><span className="font-medium">Vistoria realizada por:</span> {inspection.inspector}</p>
-                          <p><span className="font-medium">Data da vistoria:</span> {format(inspection.scheduledDate, "dd/MM/yyyy")}</p>
-                          <p><span className="font-medium">Total de itens verificados:</span> {inspection.checklist.length}</p>
-                          <p><span className="font-medium">Itens conformes:</span> {inspection.checklist.filter(i => i.completed).length}</p>
-                          <p><span className="font-medium">Itens não conformes:</span> {inspection.checklist.filter(i => !i.completed).length}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              )}
-            </Tabs>
-          ) : (
-            <Card className="h-full flex flex-col justify-center items-center py-12">
-              <List className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">Selecione uma vistoria</h3>
-              <p className="text-muted-foreground max-w-md text-center mt-1">
-                Escolha uma vistoria na lista ao lado para ver os detalhes completos e o checklist de items
-              </p>
+                    )}
+                  </div>
+                </Tabs>
+              </CardContent>
             </Card>
-          )}
+            
+            {/* Help Card */}
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+              <CardHeader>
+                <CardTitle className="text-blue-900">Precisa de ajuda?</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-blue-800">
+                  Se você precisar remarcar uma vistoria ou tiver dúvidas sobre o processo, nossa equipe está aqui para ajudar.
+                </p>
+                <Button variant="outline" className="w-full border-blue-300 text-blue-700 hover:bg-blue-100">
+                  Falar com a equipe
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Inspection Details */}
+          <div className="lg:col-span-2">
+            {inspection ? (
+              <InspectionCard
+                inspection={inspection}
+                variant="detailed"
+                onStartInspection={() => handleStartInspection(inspection.id)}
+                onConfirmPresence={handleConfirmPresence}
+                onRequestReschedule={handleRequestReschedule}
+              />
+            ) : (
+              <Card className="h-full flex flex-col justify-center items-center py-16 bg-white shadow-sm">
+                <div className="text-center space-y-4">
+                  <div className="p-4 bg-primary/10 rounded-full mx-auto w-fit">
+                    <ClipboardCheck className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Selecione uma vistoria</h3>
+                  <p className="text-muted-foreground max-w-md">
+                    Escolha uma vistoria na lista ao lado para ver os detalhes completos, checklist e opções disponíveis.
+                  </p>
+                </div>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
       
