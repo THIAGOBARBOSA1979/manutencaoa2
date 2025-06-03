@@ -3,8 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
-import { Search, Filter, X, Calendar as CalendarIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -17,9 +16,28 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Card, CardContent } from "@/components/ui/card";
-import { documentService } from "@/services/DocumentService";
+import { Calendar } from "@/components/ui/calendar";
+import { 
+  Search, Filter, X, Calendar as CalendarIcon, 
+  Tag, FileType, Users, Building
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+
+interface FilterState {
+  search: string;
+  category: string;
+  type: string;
+  status: string;
+  priority: string;
+  client: string;
+  property: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  tags: string[];
+  securityLevel: string;
+  createdBy: string;
+}
 
 interface DocumentFiltersProps {
   onSearch: (query: string, filters: any) => void;
@@ -28,205 +46,254 @@ interface DocumentFiltersProps {
   categories: Array<{ id: string; name: string; }>;
 }
 
-export function DocumentFilters({ onSearch, activeFilters, onClearFilters, categories }: DocumentFiltersProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+export function DocumentFilters({ 
+  onSearch, 
+  activeFilters, 
+  onClearFilters, 
+  categories 
+}: DocumentFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    category: "all",
+    type: "all",
+    status: "all",
+    priority: "all",
+    client: "",
+    property: "",
+    tags: [],
+    securityLevel: "all",
+    createdBy: "",
+    ...activeFilters
+  });
 
-  const handleSearch = () => {
-    const filters = {
-      category: activeFilters.category,
-      status: activeFilters.status,
-      priority: activeFilters.priority,
-      dateRange: dateRange.from && dateRange.to ? dateRange : undefined
+  const updateFilter = (key: keyof FilterState, value: any) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    onSearch(newFilters.search, newFilters);
+  };
+
+  const addTag = (tag: string) => {
+    if (!filters.tags.includes(tag)) {
+      updateFilter('tags', [...filters.tags, tag]);
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    updateFilter('tags', filters.tags.filter(t => t !== tag));
+  };
+
+  const clearAllFilters = () => {
+    const clearedFilters = {
+      search: "",
+      category: "all",
+      type: "all",
+      status: "all",
+      priority: "all",
+      client: "",
+      property: "",
+      tags: [],
+      securityLevel: "all",
+      createdBy: ""
     };
-    onSearch(searchQuery, filters);
+    setFilters(clearedFilters);
+    onClearFilters();
   };
 
-  const handleFilterChange = (key: string, value: string) => {
-    const newFilters = { ...activeFilters, [key]: value };
-    onSearch(searchQuery, newFilters);
-  };
-
-  const getActiveFilterCount = () => {
-    return Object.values(activeFilters).filter(Boolean).length + 
-           (dateRange.from && dateRange.to ? 1 : 0);
-  };
+  const hasActiveFilters = filters.search || 
+    filters.category !== "all" || 
+    filters.type !== "all" || 
+    filters.status !== "all" || 
+    filters.priority !== "all" ||
+    filters.securityLevel !== "all" ||
+    filters.client ||
+    filters.property ||
+    filters.createdBy ||
+    filters.tags.length > 0 ||
+    filters.dateFrom ||
+    filters.dateTo;
 
   return (
-    <div className="space-y-4">
-      {/* Busca principal */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar documentos por título, descrição ou tags..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              if (e.target.value === "") {
-                onSearch("", activeFilters);
-              }
-            }}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-          />
-        </div>
-        <Button onClick={handleSearch}>Buscar</Button>
-        <Button 
-          variant="outline" 
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="relative"
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Filtros
-          {getActiveFilterCount() > 0 && (
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs">
-              {getActiveFilterCount()}
-            </Badge>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2">
+          <Search className="h-5 w-5" />
+          Busca e Filtros
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Busca principal */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por título, descrição, conteúdo ou tags..."
+              className="pl-9"
+              value={filters.search}
+              onChange={(e) => updateFilter('search', e.target.value)}
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className={cn(showAdvanced && "bg-muted")}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filtros Avançados
+          </Button>
+          {hasActiveFilters && (
+            <Button variant="outline" onClick={clearAllFilters}>
+              <X className="h-4 w-4 mr-2" />
+              Limpar Tudo
+            </Button>
           )}
-        </Button>
-      </div>
+        </div>
 
-      {/* Filtros avançados */}
-      {showAdvanced && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Categoria</label>
-                <Select 
-                  value={activeFilters.category || ""} 
-                  onValueChange={(value) => handleFilterChange("category", value)}
+        {/* Tags ativas */}
+        {filters.tags.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Tag className="h-4 w-4 text-muted-foreground" />
+            {filters.tags.map((tag) => (
+              <Badge key={tag} variant="secondary" className="gap-1">
+                {tag}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 hover:bg-transparent"
+                  onClick={() => removeTag(tag)}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Status</label>
-                <Select 
-                  value={activeFilters.status || ""} 
-                  onValueChange={(value) => handleFilterChange("status", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
-                    <SelectItem value="published">Publicado</SelectItem>
-                    <SelectItem value="draft">Rascunho</SelectItem>
-                    <SelectItem value="archived">Arquivado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Prioridade</label>
-                <Select 
-                  value={activeFilters.priority || ""} 
-                  onValueChange={(value) => handleFilterChange("priority", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todas</SelectItem>
-                    <SelectItem value="high">Alta</SelectItem>
-                    <SelectItem value="medium">Média</SelectItem>
-                    <SelectItem value="low">Baixa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Período</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.from ? (
-                        dateRange.to ? (
-                          `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`
-                        ) : (
-                          dateRange.from.toLocaleDateString()
-                        )
-                      ) : (
-                        "Selecionar período"
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={dateRange.from}
-                      selected={{ from: dateRange.from, to: dateRange.to }}
-                      onSelect={(range) => {
-                        setDateRange(range || {});
-                        if (range?.from && range?.to) {
-                          handleSearch();
-                        }
-                      }}
-                      numberOfMonths={2}
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center mt-4">
-              <div className="flex gap-2 flex-wrap">
-                {Object.entries(activeFilters).map(([key, value]) => 
-                  value && (
-                    <Badge key={key} variant="secondary" className="gap-1">
-                      {key}: {String(value)}
-                      <X 
-                        className="h-3 w-3 cursor-pointer" 
-                        onClick={() => handleFilterChange(key, "")}
-                      />
-                    </Badge>
-                  )
-                )}
-                {dateRange.from && dateRange.to && (
-                  <Badge variant="secondary" className="gap-1">
-                    Período selecionado
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
-                      onClick={() => setDateRange({})}
-                    />
-                  </Badge>
-                )}
-              </div>
-              
-              {getActiveFilterCount() > 0 && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    onClearFilters();
-                    setDateRange({});
-                    setSearchQuery("");
-                  }}
-                >
-                  Limpar filtros
+                  <X className="h-3 w-3" />
                 </Button>
-              )}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Filtros básicos sempre visíveis */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Select value={filters.category} onValueChange={(value) => updateFilter('category', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas categorias</SelectItem>
+              {categories.map(cat => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.type} onValueChange={(value) => updateFilter('type', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os tipos</SelectItem>
+              <SelectItem value="auto">Automáticos</SelectItem>
+              <SelectItem value="manual">Manuais</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.status} onValueChange={(value) => updateFilter('status', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos status</SelectItem>
+              <SelectItem value="draft">Rascunho</SelectItem>
+              <SelectItem value="published">Publicado</SelectItem>
+              <SelectItem value="archived">Arquivado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Filtros avançados */}
+        {showAdvanced && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
+            <Select value={filters.priority} onValueChange={(value) => updateFilter('priority', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Prioridade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas prioridades</SelectItem>
+                <SelectItem value="high">Alta</SelectItem>
+                <SelectItem value="medium">Média</SelectItem>
+                <SelectItem value="low">Baixa</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.securityLevel} onValueChange={(value) => updateFilter('securityLevel', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Nível de Segurança" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os níveis</SelectItem>
+                <SelectItem value="public">Público</SelectItem>
+                <SelectItem value="internal">Interno</SelectItem>
+                <SelectItem value="confidential">Confidencial</SelectItem>
+                <SelectItem value="restricted">Restrito</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="space-y-2">
+              <Input
+                placeholder="Cliente..."
+                value={filters.client}
+                onChange={(e) => updateFilter('client', e.target.value)}
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+
+            <div className="space-y-2">
+              <Input
+                placeholder="Empreendimento..."
+                value={filters.property}
+                onChange={(e) => updateFilter('property', e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Input
+                placeholder="Criado por..."
+                value={filters.createdBy}
+                onChange={(e) => updateFilter('createdBy', e.target.value)}
+              />
+            </div>
+
+            {/* Seletor de data */}
+            <div className="space-y-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !filters.dateFrom && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.dateFrom ? format(filters.dateFrom, "dd/MM/yyyy") : "Data inicial"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filters.dateFrom}
+                    onSelect={(date) => updateFilter('dateFrom', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        )}
+
+        {/* Indicador de filtros ativos */}
+        {hasActiveFilters && (
+          <div className="text-sm text-muted-foreground border-t pt-2">
+            Filtros ativos aplicados
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

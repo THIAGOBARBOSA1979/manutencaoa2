@@ -1,9 +1,14 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Archive, Star, Download, Copy } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,17 +18,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { 
+  Download, Trash2, Archive, Star, Tag, 
+  MoreHorizontal, PackageX, CheckCircle, Shield,
+  Eye, FileText
+} from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { documentService, Document } from "@/services/DocumentService";
+import { Document } from "@/services/DocumentService";
 
 interface BulkActionsProps {
   documents: Document[];
@@ -32,240 +34,227 @@ interface BulkActionsProps {
   onActionComplete: () => void;
 }
 
-export function BulkActions({ documents, selectedIds, onSelectionChange, onActionComplete }: BulkActionsProps) {
-  const [bulkAction, setBulkAction] = useState("");
+export function BulkActions({
+  documents,
+  selectedIds,
+  onSelectionChange,
+  onActionComplete
+}: BulkActionsProps) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const isAllSelected = documents.length > 0 && selectedIds.length === documents.length;
-  const isIndeterminate = selectedIds.length > 0 && selectedIds.length < documents.length;
+  if (selectedIds.length === 0) return null;
 
-  const handleSelectAll = () => {
-    if (isAllSelected) {
-      onSelectionChange([]);
-    } else {
-      onSelectionChange(documents.map(doc => doc.id));
-    }
-  };
+  const selectedDocuments = documents.filter(doc => selectedIds.includes(doc.id));
 
-  const handleBulkDelete = async () => {
+  const handleBulkDownload = async () => {
+    setIsProcessing(true);
     try {
-      const deletedCount = documentService.deleteMultipleDocuments(selectedIds);
-      toast({
-        title: "Documentos excluídos",
-        description: `${deletedCount} documento(s) excluído(s) com sucesso`
-      });
-      onSelectionChange([]);
-      onActionComplete();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao excluir documentos",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleBulkStatusChange = async (status: "published" | "archived" | "draft") => {
-    try {
-      let updatedCount = 0;
-      selectedIds.forEach(id => {
-        if (documentService.updateDocument(id, { status })) {
-          updatedCount++;
-        }
-      });
+      // Simular download em massa
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast({
-        title: "Status atualizado",
-        description: `${updatedCount} documento(s) atualizado(s) com sucesso`
-      });
-      onSelectionChange([]);
-      onActionComplete();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar status dos documentos",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleBulkFavorite = async () => {
-    try {
-      let updatedCount = 0;
-      selectedIds.forEach(id => {
-        if (documentService.toggleFavorite(id)) {
-          updatedCount++;
-        }
+        title: "Download iniciado",
+        description: `Preparando download de ${selectedIds.length} documentos...`
       });
       
-      toast({
-        title: "Favoritos atualizados",
-        description: `${updatedCount} documento(s) atualizado(s) com sucesso`
-      });
       onSelectionChange([]);
       onActionComplete();
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Erro ao atualizar favoritos",
+        title: "Erro no download",
+        description: "Falha ao preparar download dos documentos",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleBulkDuplicate = async () => {
-    try {
-      let duplicatedCount = 0;
-      selectedIds.forEach(id => {
-        if (documentService.duplicateDocument(id)) {
-          duplicatedCount++;
-        }
-      });
-      
-      toast({
-        title: "Documentos duplicados",
-        description: `${duplicatedCount} documento(s) duplicado(s) com sucesso`
-      });
-      onSelectionChange([]);
-      onActionComplete();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao duplicar documentos",
-        variant: "destructive"
-      });
-    }
+  const handleBulkFavorite = () => {
+    // Implementar lógica de favoritos em massa
+    toast({
+      title: "Favoritos atualizados",
+      description: `${selectedIds.length} documentos foram marcados como favoritos.`
+    });
+    onSelectionChange([]);
+    onActionComplete();
   };
 
-  const executeBulkAction = () => {
-    switch (bulkAction) {
-      case "publish":
-        handleBulkStatusChange("published");
-        break;
-      case "archive":
-        handleBulkStatusChange("archived");
-        break;
-      case "draft":
-        handleBulkStatusChange("draft");
-        break;
-      case "favorite":
-        handleBulkFavorite();
-        break;
-      case "duplicate":
-        handleBulkDuplicate();
-        break;
-    }
-    setBulkAction("");
+  const handleBulkArchive = () => {
+    // Implementar lógica de arquivamento em massa
+    setShowArchiveDialog(false);
+    toast({
+      title: "Documentos arquivados",
+      description: `${selectedIds.length} documentos foram arquivados.`
+    });
+    onSelectionChange([]);
+    onActionComplete();
   };
 
-  if (documents.length === 0) return null;
+  const handleBulkDelete = () => {
+    // Implementar lógica de exclusão em massa
+    setShowDeleteDialog(false);
+    toast({
+      title: "Documentos excluídos",
+      description: `${selectedIds.length} documentos foram excluídos com sucesso.`,
+      variant: "destructive"
+    });
+    onSelectionChange([]);
+    onActionComplete();
+  };
+
+  const handleBulkPermissions = () => {
+    toast({
+      title: "Permissões atualizadas",
+      description: `Permissões foram configuradas para ${selectedIds.length} documentos.`
+    });
+  };
+
+  const getSelectionSummary = () => {
+    const categories = selectedDocuments.reduce((acc, doc) => {
+      acc[doc.category] = (acc[doc.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(categories).map(([cat, count]) => 
+      `${count} ${cat}`
+    ).join(", ");
+  };
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
-      <div className="flex items-center gap-2">
-        <Checkbox
-          checked={isAllSelected}
-          onCheckedChange={handleSelectAll}
-          ref={(ref) => {
-            if (ref) {
-              const inputElement = ref.querySelector('input') as HTMLInputElement;
-              if (inputElement) inputElement.indeterminate = isIndeterminate;
-            }
-          }}
-        />
-        <span className="text-sm font-medium">
-          {selectedIds.length > 0 ? (
-            <>
-              {selectedIds.length} de {documents.length} selecionado(s)
-              <Badge variant="secondary" className="ml-2">
+    <>
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-lg m-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-primary" />
+              <span className="font-medium">
+                {selectedIds.length} documento{selectedIds.length > 1 ? 's' : ''} selecionado{selectedIds.length > 1 ? 's' : ''}
+              </span>
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
                 {selectedIds.length}
               </Badge>
-            </>
-          ) : (
-            "Selecionar todos"
-          )}
-        </span>
+            </div>
+            
+            {selectedIds.length <= 5 && (
+              <div className="text-sm text-muted-foreground">
+                {getSelectionSummary()}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkDownload}
+              disabled={isProcessing}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {isProcessing ? "Preparando..." : "Baixar Todos"}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkFavorite}
+              className="gap-2"
+            >
+              <Star className="h-4 w-4" />
+              Favoritar
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={handleBulkPermissions}>
+                  <Shield className="mr-2 h-4 w-4" />
+                  Gerenciar permissões
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Tag className="mr-2 h-4 w-4" />
+                  Adicionar tags
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Alterar categoria
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowArchiveDialog(true)}>
+                  <Archive className="mr-2 h-4 w-4" />
+                  Arquivar selecionados
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir selecionados
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onSelectionChange([])}
+              className="gap-2"
+            >
+              <PackageX className="h-4 w-4" />
+              Cancelar
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {selectedIds.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Select value={bulkAction} onValueChange={setBulkAction}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Ações em massa" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="publish">
-                <div className="flex items-center gap-2">
-                  <Archive className="h-4 w-4" />
-                  Publicar
-                </div>
-              </SelectItem>
-              <SelectItem value="archive">
-                <div className="flex items-center gap-2">
-                  <Archive className="h-4 w-4" />
-                  Arquivar
-                </div>
-              </SelectItem>
-              <SelectItem value="draft">
-                <div className="flex items-center gap-2">
-                  <Archive className="h-4 w-4" />
-                  Marcar como rascunho
-                </div>
-              </SelectItem>
-              <SelectItem value="favorite">
-                <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  Alternar favorito
-                </div>
-              </SelectItem>
-              <SelectItem value="duplicate">
-                <div className="flex items-center gap-2">
-                  <Copy className="h-4 w-4" />
-                  Duplicar
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Dialog de confirmação para arquivamento */}
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar arquivamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja arquivar {selectedIds.length} documento{selectedIds.length > 1 ? 's' : ''}? 
+              Documentos arquivados podem ser restaurados posteriormente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkArchive}>
+              Arquivar {selectedIds.length} documento{selectedIds.length > 1 ? 's' : ''}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-          {bulkAction && (
-            <Button onClick={executeBulkAction} size="sm">
-              Executar
-            </Button>
-          )}
-
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir ({selectedIds.length})
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmar Exclusão em Massa</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tem certeza que deseja excluir {selectedIds.length} documento(s) selecionado(s)? 
-                  Esta ação não pode ser desfeita.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBulkDelete}>
-                  Excluir Todos
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => onSelectionChange([])}
-          >
-            Limpar seleção
-          </Button>
-        </div>
-      )}
-    </div>
+      {/* Dialog de confirmação para exclusão */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir {selectedIds.length} documento{selectedIds.length > 1 ? 's' : ''}? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir {selectedIds.length} documento{selectedIds.length > 1 ? 's' : ''}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

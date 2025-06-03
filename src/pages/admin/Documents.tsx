@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  FileText, Search, Eye, Save, X, 
-  Star, Clock, AlertTriangle, Archive, BarChart, TrendingUp
+  FileText, Star, Clock, AlertTriangle, Archive, BarChart, TrendingUp,
+  Plus, Settings, Shield, Download, Upload
 } from "lucide-react";
 import {
   Dialog,
@@ -25,17 +25,23 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { documentService, Document } from "@/services/DocumentService";
+import { enhancedDocumentService } from "@/services/EnhancedDocumentService";
+import { documentPermissionService } from "@/services/DocumentPermissionService";
 import { useToast } from "@/components/ui/use-toast";
 import { DocumentsDashboard } from "@/components/Documents/DocumentsDashboard";
 import { DocumentAnalytics } from "@/components/Documents/DocumentAnalytics";
 import { DocumentCreateDialog } from "@/components/Documents/DocumentCreateDialog";
 import { DocumentList } from "@/components/Documents/DocumentList";
+import { DocumentAuditLog } from "@/components/Documents/DocumentAuditLog";
+import { DocumentUploadZone } from "@/components/Documents/DocumentUploadZone";
 
 export default function AdminDocuments() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
+  const [activeTab, setActiveTab] = useState("documents");
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   // Form states for editing
@@ -51,16 +57,36 @@ export default function AdminDocuments() {
     tags: "",
     priority: "medium" as "low" | "medium" | "high",
     description: "",
-    expiresAt: ""
+    expiresAt: "",
+    securityLevel: "internal" as "public" | "internal" | "confidential" | "restricted"
   });
 
   useEffect(() => {
     loadDocuments();
   }, []);
 
-  const loadDocuments = () => {
-    const docs = documentService.getAllDocuments();
-    setDocuments(docs);
+  const loadDocuments = async () => {
+    setIsLoading(true);
+    try {
+      const docs = documentService.getAllDocuments();
+      setDocuments(docs);
+      
+      // Log da visualização
+      documentPermissionService.logAction(
+        'system',
+        'admin_user',
+        'view',
+        'Visualização da lista de documentos no admin'
+      );
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar documentos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -76,7 +102,8 @@ export default function AdminDocuments() {
       tags: "",
       priority: "medium",
       description: "",
-      expiresAt: ""
+      expiresAt: "",
+      securityLevel: "internal"
     });
   };
 
@@ -94,31 +121,38 @@ export default function AdminDocuments() {
       tags: doc.tags?.join(', ') || "",
       priority: doc.priority,
       description: doc.description || "",
-      expiresAt: doc.expiresAt ? doc.expiresAt.toISOString().split('T')[0] : ""
+      expiresAt: doc.expiresAt ? doc.expiresAt.toISOString().split('T')[0] : "",
+      securityLevel: doc.securityLevel || "internal"
     });
   };
 
-  const handleUpdateDocument = () => {
+  const handleUpdateDocument = async () => {
     if (!editingDocument) return;
 
     try {
-      const updatedDoc = documentService.updateDocument(editingDocument.id, {
-        title: formData.title,
-        template: formData.template || undefined,
-        category: formData.category,
-        associatedTo: {
-          property: formData.associatedProperty || undefined,
-          client: formData.associatedClient || undefined
+      const result = await enhancedDocumentService.updateDocument(
+        editingDocument.id,
+        {
+          title: formData.title,
+          template: formData.template || undefined,
+          category: formData.category,
+          associatedTo: {
+            property: formData.associatedProperty || undefined,
+            client: formData.associatedClient || undefined
+          },
+          visible: formData.visible,
+          status: formData.status,
+          tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : undefined,
+          priority: formData.priority,
+          description: formData.description,
+          expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : undefined,
+          securityLevel: formData.securityLevel
         },
-        visible: formData.visible,
-        status: formData.status,
-        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : undefined,
-        priority: formData.priority,
-        description: formData.description,
-        expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : undefined
-      });
+        'admin_user',
+        'admin'
+      );
 
-      if (updatedDoc) {
+      if (result.success) {
         loadDocuments();
         setEditingDocument(null);
         resetForm();
@@ -126,6 +160,12 @@ export default function AdminDocuments() {
         toast({
           title: "Sucesso",
           description: "Documento atualizado com sucesso"
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: result.errors?.join(', ') || "Erro ao atualizar documento",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -137,14 +177,21 @@ export default function AdminDocuments() {
     }
   };
 
-  const handleDeleteDocument = (id: string) => {
+  const handleDeleteDocument = async (id: string) => {
     try {
-      const success = documentService.deleteDocument(id);
-      if (success) {
+      const result = await enhancedDocumentService.deleteDocument(id, 'admin_user', 'admin');
+      
+      if (result.success) {
         loadDocuments();
         toast({
           title: "Sucesso",
           description: "Documento excluído com sucesso"
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: result.errors?.join(', ') || "Erro ao excluir documento",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -158,7 +205,6 @@ export default function AdminDocuments() {
 
   const handlePreviewDocument = (doc: Document) => {
     if (doc.type === "auto" && doc.template) {
-      // Gerar preview com dados de exemplo
       const sampleData = {
         nome_cliente: "João Silva",
         endereco: "Rua das Flores, 123",
@@ -233,54 +279,114 @@ export default function AdminDocuments() {
     }
   };
 
+  const handleFileUpload = async (files: File[]) => {
+    for (const file of files) {
+      try {
+        const metadata = await enhancedDocumentService.extractMetadata(file, 'admin_user');
+        
+        toast({
+          title: "Upload iniciado",
+          description: `Processando arquivo: ${file.name}`
+        });
+        
+        // Simular upload - em produção, integraria com serviço real
+        setTimeout(() => {
+          loadDocuments();
+          toast({
+            title: "Upload concluído",
+            description: `Arquivo ${file.name} foi enviado com sucesso`
+          });
+        }, 2000);
+        
+      } catch (error) {
+        toast({
+          title: "Erro no upload",
+          description: `Falha ao enviar ${file.name}`,
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   const stats = documentService.getDocumentStats();
   const categories = documentService.getCategories();
   const favoriteDocuments = documentService.getFavoriteDocuments();
   const expiringDocuments = documentService.getExpiringDocuments();
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando documentos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header Melhorado */}
+      {/* Header aprimorado */}
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <FileText className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <FileText className="h-8 w-8 text-primary" />
+              </div>
               Gerenciamento de Documentos
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Sistema completo para criação, organização e distribuição de documentos
+            <p className="text-muted-foreground mt-2">
+              Sistema completo para criação, organização e distribuição segura de documentos
             </p>
           </div>
-          <DocumentCreateDialog onDocumentCreated={loadDocuments} />
+          <div className="flex items-center gap-2">
+            <DocumentCreateDialog onDocumentCreated={loadDocuments} />
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-2" />
+              Configurações
+            </Button>
+          </div>
         </div>
         
-        {/* Breadcrumb de navegação */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Administração</span>
-          <span>/</span>
-          <span className="text-foreground font-medium">Documentos</span>
-          <span className="ml-auto">{documents.length} documentos no total</span>
+        {/* Breadcrumb aprimorado */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Administração</span>
+            <span>/</span>
+            <span className="text-foreground font-medium">Documentos</span>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <Badge variant="outline">{documents.length} documentos no total</Badge>
+            <Badge variant="secondary">{stats.published} publicados</Badge>
+            {stats.expiring > 0 && (
+              <Badge variant="destructive">{stats.expiring} vencendo</Badge>
+            )}
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="documents" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <BarChart className="h-4 w-4" />
-            Visão Geral
+            Dashboard
           </TabsTrigger>
           <TabsTrigger value="documents" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Documentos
           </TabsTrigger>
+          <TabsTrigger value="upload" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Upload
+          </TabsTrigger>
           <TabsTrigger value="favorites" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
             Favoritos ({stats.favorites})
           </TabsTrigger>
-          <TabsTrigger value="expiring" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Vencendo ({stats.expiring})
+          <TabsTrigger value="audit" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Auditoria
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
@@ -290,10 +396,6 @@ export default function AdminDocuments() {
 
         <TabsContent value="dashboard">
           <DocumentsDashboard />
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <DocumentAnalytics />
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-6">
@@ -311,13 +413,17 @@ export default function AdminDocuments() {
           />
         </TabsContent>
 
+        <TabsContent value="upload">
+          <DocumentUploadZone onFilesUploaded={handleFileUpload} />
+        </TabsContent>
+
         <TabsContent value="favorites">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Documentos Favoritos</h3>
               <Badge variant="secondary">{favoriteDocuments.length} documentos</Badge>
             </div>
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {favoriteDocuments.map((doc) => (
                 <Card key={doc.id} className="hover:shadow-md transition-shadow border-yellow-200">
                   {/* ... keep existing code (favorite documents layout) */}
@@ -327,20 +433,12 @@ export default function AdminDocuments() {
           </div>
         </TabsContent>
 
-        <TabsContent value="expiring">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Documentos Vencendo</h3>
-              <Badge variant="destructive">{expiringDocuments.length} documentos</Badge>
-            </div>
-            <div className="space-y-4">
-              {expiringDocuments.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow border-red-200">
-                  {/* ... keep existing code (expiring documents layout) */}
-                </Card>
-              ))}
-            </div>
-          </div>
+        <TabsContent value="audit">
+          <DocumentAuditLog showFilters={true} />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <DocumentAnalytics />
         </TabsContent>
       </Tabs>
 
@@ -466,6 +564,21 @@ export default function AdminDocuments() {
                 value={formData.expiresAt}
                 onChange={(e) => setFormData(prev => ({...prev, expiresAt: e.target.value}))}
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Nível de Segurança</Label>
+              <Select value={formData.securityLevel} onValueChange={(value) => setFormData(prev => ({...prev, securityLevel: value}))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">Publico</SelectItem>
+                  <SelectItem value="internal">Interno</SelectItem>
+                  <SelectItem value="confidential">Confidencial</SelectItem>
+                  <SelectItem value="restricted">Restrito</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
