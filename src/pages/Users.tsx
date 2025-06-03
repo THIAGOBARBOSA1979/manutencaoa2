@@ -1,19 +1,15 @@
 
 import { useState } from "react";
-import { Users as UsersIcon, Plus, User, Mail, Phone, UserCheck, UserCog, UserMinus, Search, Filter, MoreVertical, Edit, Trash2, Eye, Download, Upload, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users as UsersIcon, Plus, Eye, Edit, Trash2, UserCheck, UserX, Mail, Phone } from "lucide-react";
+import { AdminHeader } from "@/components/Admin/AdminHeader";
+import { AdminFilters } from "@/components/Admin/AdminFilters";
+import { AdminTable } from "@/components/Admin/AdminTable";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UserForm } from "@/components/Users/UserForm";
-import { UserFilters } from "@/components/Users/UserFilters";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock data
+// Enhanced mock data
 const users = [
   {
     id: "1",
@@ -25,7 +21,8 @@ const users = [
     property: "Edifício Aurora",
     unit: "507",
     lastLogin: "2024-01-15",
-    avatar: "JS"
+    avatar: "JS",
+    createdAt: new Date(2024, 0, 10)
   },
   {
     id: "2",
@@ -37,7 +34,8 @@ const users = [
     property: "Edifício Aurora",
     unit: "204",
     lastLogin: "2024-01-14",
-    avatar: "MO"
+    avatar: "MO",
+    createdAt: new Date(2024, 0, 15)
   },
   {
     id: "3",
@@ -49,7 +47,8 @@ const users = [
     property: "Residencial Bosque Verde",
     unit: "102",
     lastLogin: "2024-01-13",
-    avatar: "RP"
+    avatar: "RP",
+    createdAt: new Date(2024, 1, 5)
   },
   {
     id: "4",
@@ -61,7 +60,8 @@ const users = [
     property: null,
     unit: null,
     lastLogin: "2024-01-15",
-    avatar: "JC"
+    avatar: "JC",
+    createdAt: new Date(2024, 0, 20)
   },
   {
     id: "5",
@@ -73,459 +73,251 @@ const users = [
     property: "Residencial Bosque Verde",
     unit: "405",
     lastLogin: "2024-01-10",
-    avatar: "FM"
-  },
-  {
-    id: "6",
-    name: "Luciana Santos",
-    email: "luciana.santos@email.com",
-    phone: "(11) 98888-7777",
-    role: "manager",
-    status: "active",
-    property: null,
-    unit: null,
-    lastLogin: "2024-01-15",
-    avatar: "LS"
-  },
+    avatar: "FM",
+    createdAt: new Date(2023, 11, 15)
+  }
 ];
-
-// Role configuration
-const roleConfig = {
-  admin: {
-    label: "Administrador",
-    badge: "bg-purple-100 text-purple-800 border-purple-200",
-    icon: UserCog,
-  },
-  manager: {
-    label: "Gerente",
-    badge: "bg-blue-100 text-blue-800 border-blue-200",
-    icon: UserCheck,
-  },
-  technical: {
-    label: "Técnico",
-    badge: "bg-green-100 text-green-800 border-green-200",
-    icon: UserCheck,
-  },
-  client: {
-    label: "Cliente",
-    badge: "bg-gray-100 text-gray-800 border-gray-200",
-    icon: User,
-  },
-};
 
 const Users = () => {
   const { toast } = useToast();
-  const [isUserFormOpen, setIsUserFormOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [filters, setFilters] = useState({
-    search: "",
-    role: "all",
-    status: "all",
-    property: "all",
-  });
-  const [userList, setUserList] = useState(users);
+  const [searchValue, setSearchValue] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [propertyFilter, setPropertyFilter] = useState("all");
 
-  // Filter users based on active filters
-  const filteredUsers = userList.filter(user => {
-    const matchesSearch = !filters.search || 
-      user.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-      user.email.toLowerCase().includes(filters.search.toLowerCase()) ||
-      user.phone.includes(filters.search);
+  // Calculate stats
+  const stats = [
+    { label: "Total", value: users.length, color: "text-slate-700" },
+    { label: "Ativos", value: users.filter(u => u.status === "active").length, color: "text-green-600" },
+    { label: "Clientes", value: users.filter(u => u.role === "client").length, color: "text-blue-600" },
+    { label: "Equipe", value: users.filter(u => u.role !== "client").length, color: "text-purple-600" }
+  ];
+
+  // Filter data
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = !searchValue || 
+      user.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchValue.toLowerCase()) ||
+      user.phone.includes(searchValue);
     
-    const matchesRole = filters.role === "all" || user.role === filters.role;
-    const matchesStatus = filters.status === "all" || user.status === filters.status;
-    const matchesProperty = filters.property === "all" || 
-      (user.property && user.property.toLowerCase().includes(filters.property));
+    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+    const matchesStatus = statusFilter === "all" || user.status === statusFilter;
+    const matchesProperty = propertyFilter === "all" || 
+      (user.property && user.property.includes(propertyFilter));
 
     return matchesSearch && matchesRole && matchesStatus && matchesProperty;
   });
 
-  // Stats
-  const stats = {
-    total: userList.length,
-    active: userList.filter(u => u.status === "active").length,
-    inactive: userList.filter(u => u.status === "inactive").length,
-    clients: userList.filter(u => u.role === "client").length,
-    staff: userList.filter(u => u.role !== "client").length,
-  };
-
-  const handleSaveUser = (userData: any) => {
-    if (editingUser) {
-      setUserList(users => users.map(user => 
-        user.id === editingUser.id ? { ...user, ...userData } : user
-      ));
-      setEditingUser(null);
-      toast({
-        title: "Usuário atualizado",
-        description: "As informações do usuário foram atualizadas com sucesso.",
-      });
-    } else {
-      const newUser = {
-        id: Date.now().toString(),
-        ...userData,
-        status: "active",
-        lastLogin: "-",
-        avatar: userData.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()
-      };
-      setUserList(users => [...users, newUser]);
-      toast({
-        title: "Usuário criado",
-        description: "Novo usuário foi criado com sucesso.",
-      });
-    }
-  };
-
-  const handleEditUser = (user: any) => {
-    setEditingUser(user);
-    setIsUserFormOpen(true);
-  };
-
-  const handleDeleteUser = (userId: string) => {
-    setUserList(users => users.filter(user => user.id !== userId));
+  const handleExport = () => {
     toast({
-      title: "Usuário removido",
-      description: "O usuário foi removido do sistema.",
-      variant: "destructive",
+      title: "Exportação iniciada",
+      description: "Os dados serão enviados para seu e-mail.",
     });
   };
 
-  const handleToggleUserStatus = (userId: string) => {
-    setUserList(users => users.map(user => 
-      user.id === userId 
-        ? { ...user, status: user.status === "active" ? "inactive" : "active" }
-        : user
-    ));
-    toast({
-      title: "Status atualizado",
-      description: "O status do usuário foi alterado.",
-    });
+  const getRoleBadge = (role: string) => {
+    const roleConfig = {
+      admin: { label: "Administrador", className: "bg-purple-100 text-purple-800 border-purple-200" },
+      manager: { label: "Gerente", className: "bg-blue-100 text-blue-800 border-blue-200" },
+      technical: { label: "Técnico", className: "bg-green-100 text-green-800 border-green-200" },
+      client: { label: "Cliente", className: "bg-gray-100 text-gray-800 border-gray-200" }
+    };
+    
+    const config = roleConfig[role as keyof typeof roleConfig];
+    return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
   };
 
-  const handleBulkAction = (action: string) => {
-    if (selectedUsers.length === 0) {
-      toast({
-        title: "Nenhum usuário selecionado",
-        description: "Selecione pelo menos um usuário para executar esta ação.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    switch (action) {
-      case "activate":
-        setUserList(users => users.map(user => 
-          selectedUsers.includes(user.id) ? { ...user, status: "active" } : user
-        ));
-        toast({
-          title: "Usuários ativados",
-          description: `${selectedUsers.length} usuário(s) foram ativados.`,
-        });
-        break;
-      case "deactivate":
-        setUserList(users => users.map(user => 
-          selectedUsers.includes(user.id) ? { ...user, status: "inactive" } : user
-        ));
-        toast({
-          title: "Usuários desativados",
-          description: `${selectedUsers.length} usuário(s) foram desativados.`,
-        });
-        break;
-      case "delete":
-        setUserList(users => users.filter(user => !selectedUsers.includes(user.id)));
-        toast({
-          title: "Usuários removidos",
-          description: `${selectedUsers.length} usuário(s) foram removidos.`,
-          variant: "destructive",
-        });
-        break;
-    }
-    setSelectedUsers([]);
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      active: { label: "Ativo", className: "bg-green-100 text-green-800 border-green-200" },
+      inactive: { label: "Inativo", className: "bg-red-100 text-red-800 border-red-200" }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig];
+    return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
   };
 
-  const handleSelectUser = (userId: string) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedUsers.length === filteredUsers.length) {
-      setSelectedUsers([]);
-    } else {
-      setSelectedUsers(filteredUsers.map(user => user.id));
-    }
-  };
-
-  const renderUserCard = (user: any) => {
-    const RoleIcon = roleConfig[user.role as keyof typeof roleConfig]?.icon || User;
-    const isSelected = selectedUsers.includes(user.id);
-
-    return (
-      <Card key={user.id} className={`transition-all duration-200 hover:shadow-lg ${isSelected ? 'ring-2 ring-primary' : ''}`}>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Checkbox 
-                checked={isSelected}
-                onCheckedChange={() => handleSelectUser(user.id)}
-              />
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold text-lg">
-                {user.avatar}
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">{user.name}</h3>
-                <p className="text-sm text-muted-foreground">Último login: {user.lastLogin}</p>
-              </div>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => console.log("View profile")}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleToggleUserStatus(user.id)}>
-                  {user.status === "active" ? <UserMinus className="mr-2 h-4 w-4" /> : <UserCheck className="mr-2 h-4 w-4" />}
-                  {user.status === "active" ? "Desativar" : "Ativar"}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => handleDeleteUser(user.id)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Remover
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Mail size={14} />
-              <span>{user.email}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Phone size={14} />
-              <span>{user.phone}</span>
+  const columns = [
+    {
+      key: "user",
+      label: "Usuário",
+      render: (_: any, row: any) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+              {row.avatar}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium text-slate-900">{row.name}</div>
+            <div className="text-sm text-slate-500 flex items-center gap-1">
+              <Mail className="h-3 w-3" />
+              {row.email}
             </div>
           </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className={roleConfig[user.role as keyof typeof roleConfig]?.badge}>
-                {roleConfig[user.role as keyof typeof roleConfig]?.label}
-              </Badge>
-              {user.status === "inactive" && (
-                <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200">
-                  Inativo
-                </Badge>
-              )}
-            </div>
-            {user.role === "client" && user.property && (
-              <div className="text-xs text-muted-foreground text-right">
-                <div className="font-medium">{user.property}</div>
-                <div>Unidade {user.unit}</div>
-              </div>
-            )}
+        </div>
+      )
+    },
+    {
+      key: "contact",
+      label: "Contato",
+      render: (_: any, row: any) => (
+        <div>
+          <div className="text-sm text-slate-600 flex items-center gap-1">
+            <Phone className="h-3 w-3" />
+            {row.phone}
           </div>
-        </CardContent>
-      </Card>
-    );
-  };
+          <div className="text-xs text-slate-500 mt-1">
+            Último login: {row.lastLogin}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: "role",
+      label: "Função",
+      render: (value: string) => getRoleBadge(value)
+    },
+    {
+      key: "property",
+      label: "Imóvel",
+      render: (_: any, row: any) => (
+        <div>
+          {row.property ? (
+            <>
+              <div className="font-medium text-slate-700">{row.property}</div>
+              <div className="text-sm text-slate-500">Unidade {row.unit}</div>
+            </>
+          ) : (
+            <span className="text-slate-400">-</span>
+          )}
+        </div>
+      )
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (value: string) => getStatusBadge(value)
+    }
+  ];
+
+  const actions = [
+    {
+      label: "Visualizar",
+      icon: <Eye className="h-4 w-4" />,
+      onClick: (row: any) => console.log("View", row)
+    },
+    {
+      label: "Editar",
+      icon: <Edit className="h-4 w-4" />,
+      onClick: (row: any) => console.log("Edit", row)
+    },
+    {
+      label: "Ativar/Desativar",
+      icon: <UserCheck className="h-4 w-4" />,
+      onClick: (row: any) => {
+        toast({
+          title: "Status alterado",
+          description: `Usuário ${row.status === "active" ? "desativado" : "ativado"} com sucesso.`,
+        });
+      }
+    },
+    {
+      label: "Excluir",
+      icon: <Trash2 className="h-4 w-4" />,
+      onClick: (row: any) => console.log("Delete", row),
+      variant: "destructive" as const,
+      separator: true
+    }
+  ];
+
+  const filters = [
+    {
+      key: "role",
+      label: "Função",
+      value: roleFilter,
+      onChange: setRoleFilter,
+      options: [
+        { value: "all", label: "Todas as funções" },
+        { value: "admin", label: "Administrador" },
+        { value: "manager", label: "Gerente" },
+        { value: "technical", label: "Técnico" },
+        { value: "client", label: "Cliente" }
+      ]
+    },
+    {
+      key: "status",
+      label: "Status",
+      value: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { value: "all", label: "Todos os status" },
+        { value: "active", label: "Ativo" },
+        { value: "inactive", label: "Inativo" }
+      ]
+    },
+    {
+      key: "property",
+      label: "Empreendimento",
+      value: propertyFilter,
+      onChange: setPropertyFilter,
+      options: [
+        { value: "all", label: "Todos os empreendimentos" },
+        { value: "Edifício Aurora", label: "Edifício Aurora" },
+        { value: "Residencial Bosque Verde", label: "Residencial Bosque Verde" },
+        { value: "Condomínio Monte Azul", label: "Condomínio Monte Azul" }
+      ]
+    }
+  ];
+
+  const headerActions = (
+    <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+      <Plus className="mr-2 h-4 w-4" />
+      Novo Usuário
+    </Button>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Page header with stats */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <UsersIcon className="text-primary" />
-            Usuários
-          </h1>
-          <p className="text-muted-foreground">
-            Gerenciamento completo de usuários do sistema
-          </p>
-        </div>
-        
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="text-center">
-            <CardContent className="p-3">
-              <div className="text-2xl font-bold text-primary">{stats.total}</div>
-              <div className="text-xs text-muted-foreground">Total</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-3">
-              <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-              <div className="text-xs text-muted-foreground">Ativos</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-3">
-              <div className="text-2xl font-bold text-red-600">{stats.inactive}</div>
-              <div className="text-xs text-muted-foreground">Inativos</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-3">
-              <div className="text-2xl font-bold text-blue-600">{stats.clients}</div>
-              <div className="text-xs text-muted-foreground">Clientes</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-3">
-              <div className="text-2xl font-bold text-purple-600">{stats.staff}</div>
-              <div className="text-xs text-muted-foreground">Equipe</div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Actions Bar */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Button onClick={() => setIsUserFormOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Usuário
-              </Button>
-              <Button variant="outline">
-                <Upload className="mr-2 h-4 w-4" />
-                Importar
-              </Button>
-              <Button variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                Exportar
-              </Button>
-            </div>
-            
-            {selectedUsers.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {selectedUsers.length} selecionado(s)
-                </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Ações em lote
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleBulkAction("activate")}>
-                      <UserCheck className="mr-2 h-4 w-4" />
-                      Ativar usuários
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleBulkAction("deactivate")}>
-                      <UserMinus className="mr-2 h-4 w-4" />
-                      Desativar usuários
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={() => handleBulkAction("delete")}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Remover usuários
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Filters */}
-      <UserFilters 
-        onFilterChange={setFilters}
-        totalUsers={filteredUsers.length}
-        activeFilters={filters}
+    <div className="space-y-8 p-8 max-w-7xl mx-auto">
+      <AdminHeader
+        title="Usuários"
+        description="Gerenciamento completo de usuários do sistema"
+        icon={<UsersIcon className="h-8 w-8 text-primary" />}
+        actions={headerActions}
+        stats={stats}
       />
 
-      {/* Select All Checkbox */}
-      {filteredUsers.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Checkbox 
-            checked={selectedUsers.length === filteredUsers.length}
-            onCheckedChange={handleSelectAll}
-          />
-          <span className="text-sm text-muted-foreground">
-            Selecionar todos os usuários ({filteredUsers.length})
-          </span>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <Tabs defaultValue="all">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">Todos ({filteredUsers.length})</TabsTrigger>
-          <TabsTrigger value="admin">
-            Administradores ({filteredUsers.filter(u => u.role === "admin" || u.role === "manager").length})
-          </TabsTrigger>
-          <TabsTrigger value="staff">
-            Funcionários ({filteredUsers.filter(u => u.role === "technical").length})
-          </TabsTrigger>
-          <TabsTrigger value="clients">
-            Clientes ({filteredUsers.filter(u => u.role === "client").length})
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="all" className="space-y-4 pt-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredUsers.map(renderUserCard)}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="admin" className="space-y-4 pt-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredUsers
-              .filter(user => user.role === "admin" || user.role === "manager")
-              .map(renderUserCard)}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="staff" className="space-y-4 pt-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredUsers
-              .filter(user => user.role === "technical")
-              .map(renderUserCard)}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="clients" className="space-y-4 pt-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredUsers
-              .filter(user => user.role === "client")
-              .map(renderUserCard)}
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* User Form Modal */}
-      <UserForm
-        isOpen={isUserFormOpen}
-        onClose={() => {
-          setIsUserFormOpen(false);
-          setEditingUser(null);
+      <AdminFilters
+        searchPlaceholder="Buscar usuários por nome, email ou telefone..."
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        filters={filters}
+        onExport={handleExport}
+        resultCount={filteredUsers.length}
+        activeFiltersCount={[roleFilter, statusFilter, propertyFilter].filter(f => f !== "all").length}
+        onClearFilters={() => {
+          setRoleFilter("all");
+          setStatusFilter("all");
+          setPropertyFilter("all");
+          setSearchValue("");
         }}
-        onSave={handleSaveUser}
-        editingUser={editingUser}
+      />
+
+      <AdminTable
+        columns={columns}
+        data={filteredUsers}
+        actions={actions}
+        emptyState={{
+          icon: <UsersIcon className="h-12 w-12 text-slate-400" />,
+          title: "Nenhum usuário encontrado",
+          description: "Não há usuários que correspondam aos filtros aplicados.",
+          action: (
+            <Button className="mt-4">
+              <Plus className="mr-2 h-4 w-4" />
+              Cadastrar primeiro usuário
+            </Button>
+          )
+        }}
       />
     </div>
   );
