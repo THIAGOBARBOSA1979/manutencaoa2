@@ -31,6 +31,11 @@ export interface Document {
   approvedBy?: string;
   approvedAt?: Date;
   securityLevel: "public" | "internal" | "confidential" | "restricted";
+  downloadHistory?: DownloadRecord[];
+  lastAccessedAt?: Date;
+  lastAccessedBy?: string;
+  fileHash?: string;
+  checksumValidated?: boolean;
 }
 
 export interface DocumentVersion {
@@ -41,6 +46,16 @@ export interface DocumentVersion {
   createdAt: Date;
   createdBy: string;
   changes: string;
+}
+
+export interface DownloadRecord {
+  id: string;
+  userId: string;
+  downloadedAt: Date;
+  ipAddress?: string;
+  userAgent?: string;
+  success: boolean;
+  reason?: string;
 }
 
 export interface TemplateVariable {

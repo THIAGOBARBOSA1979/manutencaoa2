@@ -1,28 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { documentValidationService } from './DocumentValidationService';
 import { documentPermissionService } from './DocumentPermissionService';
-import { Document } from './DocumentService';
-
-export interface DocumentVersion {
-  id: string;
-  version: number;
-  title: string;
-  template?: string;
-  createdAt: Date;
-  createdBy: string;
-  changes: string;
-  fileHash?: string;
-}
-
-export interface DownloadRecord {
-  id: string;
-  userId: string;
-  downloadedAt: Date;
-  ipAddress?: string;
-  userAgent?: string;
-  success: boolean;
-  reason?: string;
-}
+import { Document, DocumentVersion, DownloadRecord } from './DocumentService';
 
 export interface FileMetadata {
   name: string;
@@ -110,9 +89,7 @@ class EnhancedDocumentService {
       createdAt: new Date(),
       updatedAt: new Date(),
       downloads: 0,
-      version: 1,
-      downloadHistory: [],
-      checksumValidated: true
+      version: 1
     };
     
     this.documents.push(newDocument);

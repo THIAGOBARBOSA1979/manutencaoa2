@@ -91,7 +91,8 @@ export function DocumentCreateDialog({ onDocumentCreated }: DocumentCreateDialog
         priority: formData.priority,
         description: formData.description,
         expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : undefined,
-        createdBy: "Admin"
+        createdBy: "Admin",
+        securityLevel: "internal"
       });
 
       setIsOpen(false);
@@ -143,7 +144,8 @@ export function DocumentCreateDialog({ onDocumentCreated }: DocumentCreateDialog
         visible: true,
         status: "published",
         priority: "medium",
-        createdBy: "Admin"
+        createdBy: "Admin",
+        securityLevel: "internal"
       });
 
       setUploadProgress(0);

@@ -83,7 +83,8 @@ export default function ClientDocuments() {
       createdBy: "Sistema",
       fileUrl: propertyDoc.downloadUrl,
       fileName: propertyDoc.title,
-      fileSize: propertyDoc.size
+      fileSize: propertyDoc.size,
+      securityLevel: "internal"
     };
   };
 

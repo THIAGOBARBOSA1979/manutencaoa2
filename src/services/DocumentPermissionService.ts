@@ -1,4 +1,3 @@
-
 export interface UserPermissions {
   canCreate: boolean;
   canEdit: boolean;
@@ -23,12 +22,14 @@ export interface AuditLog {
   id: string;
   documentId: string;
   userId: string;
-  action: 'create' | 'view' | 'download' | 'edit' | 'delete' | 'approve' | 'archive' | 'share';
+  action: 'create' | 'view' | 'download' | 'edit' | 'delete' | 'approve' | 'archive' | 'share' | 'metadata_extraction';
   timestamp: Date;
   details: string;
   ipAddress?: string;
   userAgent?: string;
 }
+
+export type ActionType = 'create' | 'view' | 'download' | 'edit' | 'delete' | 'approve' | 'archive' | 'share' | 'metadata_extraction';
 
 class DocumentPermissionService {
   private auditLogs: AuditLog[] = [];
