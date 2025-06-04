@@ -49,13 +49,12 @@ class EnhancedDocumentService {
     // Simular geração de hash
     metadata.hash = `hash_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Log da extração de metadados
+    // Log da extração de metadados (sem passar propriedades inválidas)
     documentPermissionService.logAction(
       'system',
       userId,
       'metadata_extraction',
-      `Metadados extraídos para ${file.name}`,
-      { fileSize: file.size, fileType: file.type }
+      `Metadados extraídos para ${file.name} (${file.size} bytes, ${file.type})`
     );
 
     return metadata;
@@ -157,8 +156,7 @@ class EnhancedDocumentService {
         template: oldDocument.template,
         createdAt: new Date(),
         createdBy: userId,
-        changes: this.generateChangesSummary(oldDocument, this.documents[index]),
-        fileHash: oldDocument.fileHash
+        changes: this.generateChangesSummary(oldDocument, this.documents[index])
       };
 
       if (!this.documents[index].versionHistory) {
