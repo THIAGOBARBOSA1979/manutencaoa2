@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileText, Star, Clock, AlertTriangle, Archive, BarChart, TrendingUp,
-  Plus, Settings, Shield, Download, Upload
+  Plus, Settings, Shield, Download, Upload, X, Save
 } from "lucide-react";
 import {
   Dialog,
@@ -45,20 +46,34 @@ export default function AdminDocuments() {
   const { toast } = useToast();
 
   // Form states for editing
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    type: "auto" | "manual";
+    template: string;
+    category: any;
+    associatedProperty: string;
+    associatedClient: string;
+    visible: boolean;
+    status: "draft" | "published" | "archived";
+    tags: string;
+    priority: "low" | "medium" | "high";
+    description: string;
+    expiresAt: string;
+    securityLevel: "public" | "internal" | "confidential" | "restricted";
+  }>({
     title: "",
-    type: "auto" as "auto" | "manual",
+    type: "auto",
     template: "",
-    category: "outros" as any,
+    category: "outros",
     associatedProperty: "",
     associatedClient: "",
     visible: true,
-    status: "draft" as "draft" | "published" | "archived",
+    status: "draft",
     tags: "",
-    priority: "medium" as "low" | "medium" | "high",
+    priority: "medium",
     description: "",
     expiresAt: "",
-    securityLevel: "internal" as "public" | "internal" | "confidential" | "restricted"
+    securityLevel: "internal"
   });
 
   useEffect(() => {
@@ -464,7 +479,7 @@ export default function AdminDocuments() {
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({...prev, status: value}))}>
+                <Select value={formData.status} onValueChange={(value: "draft" | "published" | "archived") => setFormData(prev => ({...prev, status: value}))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -536,7 +551,7 @@ export default function AdminDocuments() {
             
             <div className="space-y-2">
               <Label>Priority</Label>
-              <Select value={formData.priority} onValueChange={(value) => setFormData(prev => ({...prev, priority: value as "low" | "medium" | "high"}))}>
+              <Select value={formData.priority} onValueChange={(value: "low" | "medium" | "high") => setFormData(prev => ({...prev, priority: value}))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -568,7 +583,7 @@ export default function AdminDocuments() {
             
             <div className="space-y-2">
               <Label>Nível de Segurança</Label>
-              <Select value={formData.securityLevel} onValueChange={(value) => setFormData(prev => ({...prev, securityLevel: value}))}>
+              <Select value={formData.securityLevel} onValueChange={(value: "public" | "internal" | "confidential" | "restricted") => setFormData(prev => ({...prev, securityLevel: value}))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

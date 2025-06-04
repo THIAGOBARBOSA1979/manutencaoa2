@@ -1,49 +1,7 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { documentValidationService } from './DocumentValidationService';
 import { documentPermissionService } from './DocumentPermissionService';
-
-// Reutilizar interfaces existentes do DocumentService
-export interface Document {
-  id: string;
-  title: string;
-  type: "auto" | "manual";
-  template?: string;
-  fileUrl?: string;
-  fileName?: string;
-  fileSize?: string;
-  category: "contrato" | "manual" | "relatorio" | "certificado" | "outros";
-  associatedTo: {
-    client?: string;
-    property?: string;
-    unit?: string;
-    phase?: string;
-  };
-  visible: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  downloads: number;
-  status: "draft" | "published" | "archived";
-  tags?: string[];
-  isFavorite?: boolean;
-  version: number;
-  versionHistory?: DocumentVersion[];
-  expiresAt?: Date;
-  priority: "low" | "medium" | "high";
-  description?: string;
-  createdBy: string;
-  approvedBy?: string;
-  approvedAt?: Date;
-  // Novos campos para segurança e rastreabilidade
-  fileHash?: string;
-  lastAccessedAt?: Date;
-  lastAccessedBy?: string;
-  downloadHistory?: DownloadRecord[];
-  securityLevel: "public" | "internal" | "confidential" | "restricted";
-  retentionPeriod?: number; // dias
-  isEncrypted?: boolean;
-  checksumValidated?: boolean;
-}
+import { Document } from './DocumentService';
 
 export interface DocumentVersion {
   id: string;
@@ -66,8 +24,63 @@ export interface DownloadRecord {
   reason?: string;
 }
 
+export interface FileMetadata {
+  name: string;
+  size: number;
+  type: string;
+  lastModified: Date;
+  hash?: string;
+  isValid: boolean;
+  errors?: string[];
+}
+
 class EnhancedDocumentService {
   private documents: Document[] = [];
+
+  // Extrair metadados do arquivo
+  async extractMetadata(file: File, userId: string): Promise<FileMetadata> {
+    const metadata: FileMetadata = {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      lastModified: new Date(file.lastModified),
+      isValid: true,
+      errors: []
+    };
+
+    // Validações básicas
+    if (file.size > 50 * 1024 * 1024) { // 50MB
+      metadata.isValid = false;
+      metadata.errors?.push('Arquivo muito grande (máximo 50MB)');
+    }
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/png'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      metadata.isValid = false;
+      metadata.errors?.push('Tipo de arquivo não permitido');
+    }
+
+    // Simular geração de hash
+    metadata.hash = `hash_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Log da extração de metadados
+    documentPermissionService.logAction(
+      'system',
+      userId,
+      'metadata_extraction',
+      `Metadados extraídos para ${file.name}`,
+      { fileSize: file.size, fileType: file.type }
+    );
+
+    return metadata;
+  }
 
   // Criar documento com validações aprimoradas
   async createDocument(

@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 
 export interface Document {
@@ -31,6 +30,7 @@ export interface Document {
   createdBy: string;
   approvedBy?: string;
   approvedAt?: Date;
+  securityLevel: "public" | "internal" | "confidential" | "restricted";
 }
 
 export interface DocumentVersion {
@@ -58,6 +58,16 @@ export interface DocumentCategory {
   description: string;
   icon: string;
   color: string;
+}
+
+export interface DocumentStats {
+  total: number;
+  published: number;
+  draft: number;
+  archived: number;
+  favorites: number;
+  expiring: number;
+  byCategory: { category: string, count: number }[];
 }
 
 class DocumentService {
@@ -90,7 +100,8 @@ Este contrato estabelece as condições de venda do imóvel acima descrito.`,
       description: "Contrato padrão para venda de imóveis",
       createdBy: "Admin",
       approvedBy: "Supervisor",
-      approvedAt: new Date(2025, 4, 10)
+      approvedAt: new Date(2025, 4, 10),
+      securityLevel: "public"
     },
     {
       id: "2", 
@@ -111,7 +122,8 @@ Este contrato estabelece as condições de venda do imóvel acima descrito.`,
       version: 2,
       priority: "medium",
       description: "Manual completo para proprietários",
-      createdBy: "Admin"
+      createdBy: "Admin",
+      securityLevel: "internal"
     },
     {
       id: "3",
@@ -143,7 +155,8 @@ OBSERVAÇÕES: {{observacoes}}`,
       priority: "low",
       description: "Relatório detalhado de vistoria",
       createdBy: "Inspetor",
-      expiresAt: new Date(2025, 10, 15)
+      expiresAt: new Date(2025, 10, 15),
+      securityLevel: "restricted"
     }
   ];
 
