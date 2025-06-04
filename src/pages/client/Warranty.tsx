@@ -1,7 +1,7 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, Plus, Download, Filter, FileText } from "lucide-react";
+import { ShieldCheck, Plus, Download, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -12,103 +12,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { format } from "date-fns";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EnhancedWarrantyRequestForm } from "@/components/Warranty/EnhancedWarrantyRequestForm";
 import { WarrantyCard } from "@/components/Warranty/WarrantyCard";
 import { WarrantySummary } from "@/components/Warranty/WarrantySummary";
 import { useToast } from "@/hooks/use-toast";
-
-// Enhanced mock data
-const warrantyClaims = [
-  {
-    id: "1",
-    title: "Infiltração no banheiro",
-    description: "Identificada infiltração na parede do box do banheiro social. Já está causando mofo e descascamento da pintura.",
-    property: "Edifício Aurora",
-    unit: "204",
-    createdAt: new Date(2025, 4, 5),
-    status: "critical" as const,
-    category: "Hidráulica",
-    priority: "high",
-    updates: [
-      {
-        id: "1",
-        date: new Date(2025, 4, 5),
-        author: "Sistema",
-        text: "Solicitação registrada com sucesso.",
-      },
-      {
-        id: "2",
-        date: new Date(2025, 4, 6),
-        author: "Técnico Especialista",
-        text: "Solicitação em análise pela equipe técnica. Vistoria agendada para amanhã.",
-      }
-    ]
-  },
-  {
-    id: "2",
-    title: "Porta empenada",
-    description: "A porta do quarto principal está empenada e não fecha corretamente.",
-    property: "Edifício Aurora",
-    unit: "204",
-    createdAt: new Date(2025, 4, 10),
-    status: "progress" as const,
-    category: "Esquadrias",
-    priority: "medium",
-    updates: [
-      {
-        id: "1",
-        date: new Date(2025, 4, 10),
-        author: "Sistema",
-        text: "Solicitação registrada com sucesso.",
-      }
-    ]
-  },
-  {
-    id: "3",
-    title: "Rachaduras na parede",
-    description: "Surgiram rachaduras na parede da sala próximo à janela principal.",
-    property: "Edifício Aurora",
-    unit: "204",
-    createdAt: new Date(2025, 4, 1),
-    status: "complete" as const,
-    category: "Estrutural",
-    priority: "low",
-    updates: [
-      {
-        id: "1",
-        date: new Date(2025, 4, 1),
-        author: "Sistema",
-        text: "Solicitação registrada com sucesso.",
-      },
-      {
-        id: "2",
-        date: new Date(2025, 4, 15),
-        author: "Técnico",
-        text: "Reparo concluído com sucesso.",
-      }
-    ]
-  },
-  {
-    id: "4",
-    title: "Vazamento na pia",
-    description: "Vazamento detectado na tubulação da pia da cozinha.",
-    property: "Edifício Aurora",
-    unit: "204",
-    createdAt: new Date(2025, 4, 8),
-    status: "pending" as const,
-    category: "Hidráulica",
-    priority: "medium",
-    updates: [
-      {
-        id: "1",
-        date: new Date(2025, 4, 8),
-        author: "Sistema",
-        text: "Solicitação registrada com sucesso.",
-      }
-    ]
-  }
-];
+import { warrantyService, CreateWarrantyData } from "@/services/WarrantyService";
+import { warrantyBusinessRules, WarrantyRequest, UserRole } from "@/services/WarrantyBusinessRules";
 
 const WarrantyGuide = () => (
   <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
@@ -128,11 +38,11 @@ const WarrantyGuide = () => (
           </li>
           <li className="flex gap-2">
             <span className="font-medium text-blue-800">3 anos:</span> 
-            <span className="text-blue-700">Impermeabilização</span>
+            <span className="text-blue-700">Impermeabilização e instalações</span>
           </li>
           <li className="flex gap-2">
             <span className="font-medium text-blue-800">2 anos:</span> 
-            <span className="text-blue-700">Instalações hidráulicas e elétricas</span>
+            <span className="text-blue-700">Esquadrias</span>
           </li>
           <li className="flex gap-2">
             <span className="font-medium text-blue-800">1 ano:</span> 
@@ -141,12 +51,6 @@ const WarrantyGuide = () => (
         </ul>
       </div>
     </CardContent>
-    <CardFooter>
-      <Button variant="outline" className="w-full border-blue-300 text-blue-700 hover:bg-blue-100">
-        <FileText className="mr-2 h-4 w-4" />
-        Ver manual completo
-      </Button>
-    </CardFooter>
   </Card>
 );
 
@@ -154,52 +58,205 @@ const ClientWarranty = () => {
   const [selectedClaim, setSelectedClaim] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [warranties, setWarranties] = useState<WarrantyRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
-  const claim = selectedClaim 
-    ? warrantyClaims.find(c => c.id === selectedClaim) 
-    : null;
+  // Simulando usuário cliente
+  const currentUserId = "client-001";
+  const currentUserRole: UserRole = "client";
+  const propertyDeliveryDate = new Date('2023-06-01'); // Data de entrega do imóvel
 
-  // Calculate statistics
-  const stats = {
-    total: warrantyClaims.length,
-    pending: warrantyClaims.filter(c => c.status === "pending").length,
-    inProgress: warrantyClaims.filter(c => c.status === "progress").length,
-    completed: warrantyClaims.filter(c => c.status === "complete").length,
-    critical: warrantyClaims.filter(c => c.status === "critical").length
-  };
+  useEffect(() => {
+    loadWarranties();
+  }, []);
 
-  // Filter claims based on active tab
-  const getFilteredClaims = () => {
-    switch (activeTab) {
-      case "pending":
-        return warrantyClaims.filter(c => c.status === "pending");
-      case "progress":
-        return warrantyClaims.filter(c => c.status === "progress");
-      case "critical":
-        return warrantyClaims.filter(c => c.status === "critical");
-      case "completed":
-        return warrantyClaims.filter(c => c.status === "complete");
-      default:
-        return warrantyClaims;
+  const loadWarranties = async () => {
+    try {
+      setLoading(true);
+      const userWarranties = warrantyService.getWarrantiesByUser(currentUserId, currentUserRole);
+      setWarranties(userWarranties);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar suas garantias.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = (data: any) => {
-    toast({
-      title: "Solicitação enviada com sucesso",
-      description: "Sua solicitação de garantia foi registrada e será analisada em breve."
-    });
-    console.log("Form data:", data);
-    setIsDialogOpen(false);
+  const claim = selectedClaim 
+    ? warranties.find(c => c.id === selectedClaim) 
+    : null;
+
+  // Calcular estatísticas usando as regras de negócio
+  const metrics = warrantyService.getWarrantyMetrics(currentUserId, currentUserRole);
+  const overdueWarranties = warrantyService.getOverdueWarranties(currentUserId, currentUserRole);
+  
+  const stats = {
+    total: metrics.totalRequests,
+    pending: metrics.byStatus.pending,
+    inProgress: metrics.byStatus.progress,
+    completed: metrics.byStatus.complete,
+    critical: metrics.byStatus.critical
   };
 
-  const handleExportData = () => {
-    toast({
-      title: "Exportação iniciada",
-      description: "Os dados serão enviados para seu e-mail quando estiverem prontos.",
-    });
+  // Filtrar solicitações baseado na aba ativa
+  const getFilteredClaims = () => {
+    switch (activeTab) {
+      case "pending":
+        return warranties.filter(c => c.status === "pending");
+      case "progress":
+        return warranties.filter(c => c.status === "progress");
+      case "critical":
+        return warranties.filter(c => c.status === "critical");
+      case "completed":
+        return warranties.filter(c => c.status === "complete");
+      default:
+        return warranties;
+    }
   };
+
+  const handleSubmit = async (data: any) => {
+    try {
+      // Preparar dados para criação
+      const warrantyData: CreateWarrantyData = {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        priority: data.priority,
+        property: "Edifício Aurora", // Seria obtido do contexto do usuário
+        unit: "204", // Seria obtido do contexto do usuário
+        client: "Cliente Teste", // Seria obtido do contexto do usuário
+        evidences: data.photos || [],
+        isUrgent: data.priority === 'critical',
+        requiresInspection: data.requiresInspection || false
+      };
+
+      // Verificar período de garantia antes de criar
+      const warrantyPeriodCheck = warrantyBusinessRules.validateWarrantyPeriod(
+        warrantyData.category,
+        new Date(),
+        propertyDeliveryDate
+      );
+
+      if (!warrantyPeriodCheck.isValid) {
+        toast({
+          title: "Garantia expirada",
+          description: warrantyPeriodCheck.errors[0],
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (warrantyPeriodCheck.remainingDays <= 30) {
+        toast({
+          title: "Atenção",
+          description: `Sua garantia expira em ${warrantyPeriodCheck.remainingDays} dias.`,
+          variant: "default",
+        });
+      }
+
+      const result = await warrantyService.createWarranty(
+        warrantyData,
+        currentUserId,
+        currentUserRole,
+        propertyDeliveryDate
+      );
+
+      if (result.success) {
+        toast({
+          title: "Solicitação criada com sucesso",
+          description: `Sua solicitação foi registrada e será analisada em breve. Tempo estimado de resolução: ${result.warranty?.estimatedResolutionTime}h`,
+        });
+        setIsDialogOpen(false);
+        loadWarranties(); // Recarregar dados
+      } else {
+        toast({
+          title: "Erro ao criar solicitação",
+          description: result.errors?.join(", ") || "Erro desconhecido",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro inesperado",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const result = await warrantyService.exportWarranties(currentUserId, currentUserRole);
+      
+      if (result.success) {
+        toast({
+          title: "Exportação concluída",
+          description: `${result.data?.length} registros exportados com sucesso.`,
+        });
+        // Aqui seria feito o download do arquivo
+        console.log("Dados exportados:", result.data);
+      } else {
+        toast({
+          title: "Erro na exportação",
+          description: result.errors?.[0] || "Erro desconhecido",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na exportação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRateWarranty = async (warrantyId: string, rating: number) => {
+    try {
+      const result = await warrantyService.updateWarranty(
+        warrantyId,
+        { satisfactionRating: rating },
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Avaliação registrada",
+          description: "Obrigado pelo seu feedback!",
+        });
+        loadWarranties();
+      } else {
+        toast({
+          title: "Erro na avaliação",
+          description: result.errors?.[0] || "Erro desconhecido",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na avaliação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <ShieldCheck className="h-12 w-12 mx-auto text-primary animate-pulse" />
+          <p className="mt-2 text-muted-foreground">Carregando suas garantias...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -215,7 +272,7 @@ const ClientWarranty = () => {
                 Garantias
               </h1>
               <p className="text-muted-foreground mt-2 text-lg">
-                Gerencie suas solicitações de garantia e assistência técnica
+                Gerencie suas solicitações de garantia com segurança e rastreabilidade
               </p>
             </div>
             <div className="flex gap-3">
@@ -234,7 +291,7 @@ const ClientWarranty = () => {
                   <DialogHeader>
                     <DialogTitle>Nova Solicitação de Garantia</DialogTitle>
                     <DialogDescription>
-                      Preencha os detalhes da sua solicitação para que possamos analisar e atender da melhor forma.
+                      Preencha os detalhes da sua solicitação. O sistema calculará automaticamente a prioridade e o tempo estimado de resolução.
                     </DialogDescription>
                   </DialogHeader>
                   
@@ -247,6 +304,17 @@ const ClientWarranty = () => {
             </div>
           </div>
         </div>
+
+        {/* Alertas de garantias em atraso */}
+        {overdueWarranties.length > 0 && (
+          <Alert className="border-orange-200 bg-orange-50">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              Você tem {overdueWarranties.length} solicitação(ões) de garantia em atraso. 
+              Entre em contato conosco para mais informações.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Statistics Summary */}
         <WarrantySummary
@@ -265,7 +333,10 @@ const ClientWarranty = () => {
               <CardHeader>
                 <CardTitle>Minhas Solicitações</CardTitle>
                 <CardDescription>
-                  Selecione uma solicitação para ver detalhes
+                  {warranties.length > 0 
+                    ? "Selecione uma solicitação para ver detalhes"
+                    : "Você ainda não possui solicitações de garantia"
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -283,6 +354,7 @@ const ClientWarranty = () => {
                         variant="compact"
                         isSelected={selectedClaim === item.id}
                         onSelect={() => setSelectedClaim(item.id)}
+                        onRate={handleRateWarranty}
                       />
                     ))}
                     
@@ -290,7 +362,10 @@ const ClientWarranty = () => {
                       <div className="text-center py-8">
                         <ShieldCheck className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
                         <p className="text-muted-foreground">
-                          Nenhuma solicitação encontrada
+                          {activeTab === "all" 
+                            ? "Nenhuma solicitação encontrada"
+                            : `Nenhuma solicitação ${activeTab === "critical" ? "crítica" : activeTab} encontrada`
+                          }
                         </p>
                       </div>
                     )}
@@ -309,6 +384,7 @@ const ClientWarranty = () => {
                 warranty={claim}
                 variant="detailed"
                 onViewDetails={() => console.log("View details")}
+                onRate={handleRateWarranty}
               />
             ) : (
               <Card className="h-full flex flex-col justify-center items-center py-16 bg-white shadow-sm">
@@ -316,16 +392,21 @@ const ClientWarranty = () => {
                   <div className="p-4 bg-primary/10 rounded-full mx-auto w-fit">
                     <ShieldCheck className="h-12 w-12 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold">Selecione uma solicitação</h3>
+                  <h3 className="text-xl font-semibold">
+                    {warranties.length === 0 ? "Bem-vindo às Garantias" : "Selecione uma solicitação"}
+                  </h3>
                   <p className="text-muted-foreground max-w-md">
-                    Escolha uma solicitação na lista ao lado para ver os detalhes completos, atualizações e opções disponíveis.
+                    {warranties.length === 0 
+                      ? "Aqui você pode criar e acompanhar suas solicitações de garantia com total transparência e segurança."
+                      : "Escolha uma solicitação na lista ao lado para ver os detalhes completos, atualizações e opções disponíveis."
+                    }
                   </p>
                   <Button 
                     className="mt-4"
                     onClick={() => setIsDialogOpen(true)}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Nova Solicitação
+                    {warranties.length === 0 ? "Criar primeira solicitação" : "Nova Solicitação"}
                   </Button>
                 </div>
               </Card>
