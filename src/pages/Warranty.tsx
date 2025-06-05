@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ShieldCheck, Plus, Eye, Settings, AlertTriangle, Clock, CheckCircle, FileText } from "lucide-react";
 import { AdminHeader } from "@/components/Admin/AdminHeader";
@@ -11,6 +10,8 @@ import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { warrantyService } from "@/services/WarrantyService";
 import { warrantyBusinessRules, WarrantyRequest, UserRole } from "@/services/WarrantyBusinessRules";
+import { WarrantyDetailModal } from "@/components/Warranty/WarrantyDetailModal";
+import { TechnicianAssignmentModal } from "@/components/Warranty/TechnicianAssignmentModal";
 
 const Warranty = () => {
   const { toast } = useToast();
@@ -21,6 +22,10 @@ const Warranty = () => {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [warranties, setWarranties] = useState<WarrantyRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedWarranty, setSelectedWarranty] = useState<WarrantyRequest | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [warrantyToAssign, setWarrantyToAssign] = useState<WarrantyRequest | null>(null);
   
   // Simulando usuário admin
   const currentUserId = "admin-001";
@@ -85,7 +90,6 @@ const Warranty = () => {
           title: "Exportação concluída",
           description: `${result.data?.length} registros exportados com sucesso.`,
         });
-        // Aqui seria feito o download do arquivo
         console.log("Dados exportados:", result.data);
       } else {
         throw new Error(result.errors?.[0] || "Erro na exportação");
@@ -100,7 +104,6 @@ const Warranty = () => {
   };
 
   const handleViewWarranty = (warranty: WarrantyRequest) => {
-    // Verificar permissões
     const permissions = warrantyBusinessRules.getWarrantyPermissions(currentUserRole, warranty.createdBy === currentUserId);
     
     if (!permissions.canView) {
@@ -112,17 +115,19 @@ const Warranty = () => {
       return;
     }
 
-    console.log("Visualizando garantia:", warranty);
-    // Implementar modal de detalhes ou navegação
+    setSelectedWarranty(warranty);
+    setShowDetailModal(true);
   };
 
   const handleAssignTechnician = async (warranty: WarrantyRequest) => {
-    // Simular atribuição de técnico
-    const technicianId = "tech-001";
-    
+    setWarrantyToAssign(warranty);
+    setShowAssignmentModal(true);
+  };
+
+  const handleTechnicianAssignment = async (warrantyId: string, technicianId: string, notes?: string) => {
     try {
       const result = await warrantyService.assignTechnician(
-        warranty.id,
+        warrantyId,
         technicianId,
         currentUserId,
         currentUserRole
@@ -133,13 +138,578 @@ const Warranty = () => {
           title: "Técnico atribuído",
           description: `Garantia atribuída ao técnico com sucesso.`,
         });
-        loadWarranties(); // Recarregar dados
+        loadWarranties();
+        setShowAssignmentModal(false);
+        setWarrantyToAssign(null);
       } else {
         throw new Error(result.errors?.[0] || "Erro na atribuição");
       }
     } catch (error) {
       toast({
         title: "Erro na atribuição",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateStatus = async (warranty: WarrantyRequest, newStatus: string) => {
+    try {
+      const result = await warrantyService.updateWarranty(
+        warranty.id,
+        { status: newStatus as any },
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Status atualizado",
+          description: `Status da garantia atualizado para ${
+            newStatus === 'complete' ? 'concluída' :
+            newStatus === 'progress' ? 'em andamento' : newStatus
+          }.`,
+        });
+        loadWarranties();
+        setShowDetailModal(false);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na atualização");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na atualização",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Calcular estatísticas usando as regras de negócio
+  const metrics = warrantyService.getWarrantyMetrics(currentUserId, currentUserRole);
+  const overdueWarranties = warrantyService.getOverdueWarranties(currentUserId, currentUserRole);
+
+  const stats = [
+    { label: "Total", value: metrics.totalRequests, color: "text-slate-700" },
+    { label: "Críticas", value: metrics.byStatus.critical, color: "text-red-600" },
+    { label: "Em Andamento", value: metrics.byStatus.progress, color: "text-blue-600" },
+    { label: "Concluídas", value: metrics.byStatus.complete, color: "text-green-600" },
+    { label: "Em Atraso", value: overdueWarranties.length, color: "text-orange-600" }
+  ];
+
+  // Filtrar dados
+  const filteredWarranties = warranties.filter(warranty => {
+    const matchesSearch = !searchValue || 
+      warranty.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+      warranty.client.toLowerCase().includes(searchValue.toLowerCase()) ||
+      warranty.property.toLowerCase().includes(searchValue.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || warranty.status === statusFilter;
+    const matchesProperty = propertyFilter === "all" || warranty.property === propertyFilter;
+    const matchesCategory = categoryFilter === "all" || warranty.category === categoryFilter;
+    const matchesPriority = priorityFilter === "all" || warranty.priority === priorityFilter;
+
+    return matchesSearch && matchesStatus && matchesProperty && matchesCategory && matchesPriority;
+  });
+
+  const handleExport = async () => {
+    try {
+      const result = await warrantyService.exportWarranties(currentUserId, currentUserRole, {
+        status: statusFilter !== "all" ? statusFilter as any : undefined,
+        priority: priorityFilter !== "all" ? priorityFilter : undefined
+      });
+
+      if (result.success) {
+        toast({
+          title: "Exportação concluída",
+          description: `${result.data?.length} registros exportados com sucesso.`,
+        });
+        console.log("Dados exportados:", result.data);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na exportação");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na exportação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewWarranty = (warranty: WarrantyRequest) => {
+    const permissions = warrantyBusinessRules.getWarrantyPermissions(currentUserRole, warranty.createdBy === currentUserId);
+    
+    if (!permissions.canView) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para visualizar esta garantia.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedWarranty(warranty);
+    setShowDetailModal(true);
+  };
+
+  const handleAssignTechnician = async (warranty: WarrantyRequest) => {
+    setWarrantyToAssign(warranty);
+    setShowAssignmentModal(true);
+  };
+
+  const handleTechnicianAssignment = async (warrantyId: string, technicianId: string, notes?: string) => {
+    try {
+      const result = await warrantyService.assignTechnician(
+        warrantyId,
+        technicianId,
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Técnico atribuído",
+          description: `Garantia atribuída ao técnico com sucesso.`,
+        });
+        loadWarranties();
+        setShowAssignmentModal(false);
+        setWarrantyToAssign(null);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na atribuição");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na atribuição",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateStatus = async (warranty: WarrantyRequest, newStatus: string) => {
+    try {
+      const result = await warrantyService.updateWarranty(
+        warranty.id,
+        { status: newStatus as any },
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Status atualizado",
+          description: `Status da garantia atualizado para ${
+            newStatus === 'complete' ? 'concluída' :
+            newStatus === 'progress' ? 'em andamento' : newStatus
+          }.`,
+        });
+        loadWarranties();
+        setShowDetailModal(false);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na atualização");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na atualização",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Calcular estatísticas usando as regras de negócio
+  const metrics = warrantyService.getWarrantyMetrics(currentUserId, currentUserRole);
+  const overdueWarranties = warrantyService.getOverdueWarranties(currentUserId, currentUserRole);
+
+  const stats = [
+    { label: "Total", value: metrics.totalRequests, color: "text-slate-700" },
+    { label: "Críticas", value: metrics.byStatus.critical, color: "text-red-600" },
+    { label: "Em Andamento", value: metrics.byStatus.progress, color: "text-blue-600" },
+    { label: "Concluídas", value: metrics.byStatus.complete, color: "text-green-600" },
+    { label: "Em Atraso", value: overdueWarranties.length, color: "text-orange-600" }
+  ];
+
+  // Filtrar dados
+  const filteredWarranties = warranties.filter(warranty => {
+    const matchesSearch = !searchValue || 
+      warranty.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+      warranty.client.toLowerCase().includes(searchValue.toLowerCase()) ||
+      warranty.property.toLowerCase().includes(searchValue.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || warranty.status === statusFilter;
+    const matchesProperty = propertyFilter === "all" || warranty.property === propertyFilter;
+    const matchesCategory = categoryFilter === "all" || warranty.category === categoryFilter;
+    const matchesPriority = priorityFilter === "all" || warranty.priority === priorityFilter;
+
+    return matchesSearch && matchesStatus && matchesProperty && matchesCategory && matchesPriority;
+  });
+
+  const handleExport = async () => {
+    try {
+      const result = await warrantyService.exportWarranties(currentUserId, currentUserRole, {
+        status: statusFilter !== "all" ? statusFilter as any : undefined,
+        priority: priorityFilter !== "all" ? priorityFilter : undefined
+      });
+
+      if (result.success) {
+        toast({
+          title: "Exportação concluída",
+          description: `${result.data?.length} registros exportados com sucesso.`,
+        });
+        console.log("Dados exportados:", result.data);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na exportação");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na exportação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewWarranty = (warranty: WarrantyRequest) => {
+    const permissions = warrantyBusinessRules.getWarrantyPermissions(currentUserRole, warranty.createdBy === currentUserId);
+    
+    if (!permissions.canView) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para visualizar esta garantia.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedWarranty(warranty);
+    setShowDetailModal(true);
+  };
+
+  const handleAssignTechnician = async (warranty: WarrantyRequest) => {
+    setWarrantyToAssign(warranty);
+    setShowAssignmentModal(true);
+  };
+
+  const handleTechnicianAssignment = async (warrantyId: string, technicianId: string, notes?: string) => {
+    try {
+      const result = await warrantyService.assignTechnician(
+        warrantyId,
+        technicianId,
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Técnico atribuído",
+          description: `Garantia atribuída ao técnico com sucesso.`,
+        });
+        loadWarranties();
+        setShowAssignmentModal(false);
+        setWarrantyToAssign(null);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na atribuição");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na atribuição",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateStatus = async (warranty: WarrantyRequest, newStatus: string) => {
+    try {
+      const result = await warrantyService.updateWarranty(
+        warranty.id,
+        { status: newStatus as any },
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Status atualizado",
+          description: `Status da garantia atualizado para ${
+            newStatus === 'complete' ? 'concluída' :
+            newStatus === 'progress' ? 'em andamento' : newStatus
+          }.`,
+        });
+        loadWarranties();
+        setShowDetailModal(false);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na atualização");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na atualização",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Calcular estatísticas usando as regras de negócio
+  const metrics = warrantyService.getWarrantyMetrics(currentUserId, currentUserRole);
+  const overdueWarranties = warrantyService.getOverdueWarranties(currentUserId, currentUserRole);
+
+  const stats = [
+    { label: "Total", value: metrics.totalRequests, color: "text-slate-700" },
+    { label: "Críticas", value: metrics.byStatus.critical, color: "text-red-600" },
+    { label: "Em Andamento", value: metrics.byStatus.progress, color: "text-blue-600" },
+    { label: "Concluídas", value: metrics.byStatus.complete, color: "text-green-600" },
+    { label: "Em Atraso", value: overdueWarranties.length, color: "text-orange-600" }
+  ];
+
+  // Filtrar dados
+  const filteredWarranties = warranties.filter(warranty => {
+    const matchesSearch = !searchValue || 
+      warranty.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+      warranty.client.toLowerCase().includes(searchValue.toLowerCase()) ||
+      warranty.property.toLowerCase().includes(searchValue.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || warranty.status === statusFilter;
+    const matchesProperty = propertyFilter === "all" || warranty.property === propertyFilter;
+    const matchesCategory = categoryFilter === "all" || warranty.category === categoryFilter;
+    const matchesPriority = priorityFilter === "all" || warranty.priority === priorityFilter;
+
+    return matchesSearch && matchesStatus && matchesProperty && matchesCategory && matchesPriority;
+  });
+
+  const handleExport = async () => {
+    try {
+      const result = await warrantyService.exportWarranties(currentUserId, currentUserRole, {
+        status: statusFilter !== "all" ? statusFilter as any : undefined,
+        priority: priorityFilter !== "all" ? priorityFilter : undefined
+      });
+
+      if (result.success) {
+        toast({
+          title: "Exportação concluída",
+          description: `${result.data?.length} registros exportados com sucesso.`,
+        });
+        console.log("Dados exportados:", result.data);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na exportação");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na exportação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewWarranty = (warranty: WarrantyRequest) => {
+    const permissions = warrantyBusinessRules.getWarrantyPermissions(currentUserRole, warranty.createdBy === currentUserId);
+    
+    if (!permissions.canView) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para visualizar esta garantia.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedWarranty(warranty);
+    setShowDetailModal(true);
+  };
+
+  const handleAssignTechnician = async (warranty: WarrantyRequest) => {
+    setWarrantyToAssign(warranty);
+    setShowAssignmentModal(true);
+  };
+
+  const handleTechnicianAssignment = async (warrantyId: string, technicianId: string, notes?: string) => {
+    try {
+      const result = await warrantyService.assignTechnician(
+        warrantyId,
+        technicianId,
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Técnico atribuído",
+          description: `Garantia atribuída ao técnico com sucesso.`,
+        });
+        loadWarranties();
+        setShowAssignmentModal(false);
+        setWarrantyToAssign(null);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na atribuição");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na atribuição",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateStatus = async (warranty: WarrantyRequest, newStatus: string) => {
+    try {
+      const result = await warrantyService.updateWarranty(
+        warranty.id,
+        { status: newStatus as any },
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Status atualizado",
+          description: `Status da garantia atualizado para ${
+            newStatus === 'complete' ? 'concluída' :
+            newStatus === 'progress' ? 'em andamento' : newStatus
+          }.`,
+        });
+        loadWarranties();
+        setShowDetailModal(false);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na atualização");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na atualização",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Calcular estatísticas usando as regras de negócio
+  const metrics = warrantyService.getWarrantyMetrics(currentUserId, currentUserRole);
+  const overdueWarranties = warrantyService.getOverdueWarranties(currentUserId, currentUserRole);
+
+  const stats = [
+    { label: "Total", value: metrics.totalRequests, color: "text-slate-700" },
+    { label: "Críticas", value: metrics.byStatus.critical, color: "text-red-600" },
+    { label: "Em Andamento", value: metrics.byStatus.progress, color: "text-blue-600" },
+    { label: "Concluídas", value: metrics.byStatus.complete, color: "text-green-600" },
+    { label: "Em Atraso", value: overdueWarranties.length, color: "text-orange-600" }
+  ];
+
+  // Filtrar dados
+  const filteredWarranties = warranties.filter(warranty => {
+    const matchesSearch = !searchValue || 
+      warranty.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+      warranty.client.toLowerCase().includes(searchValue.toLowerCase()) ||
+      warranty.property.toLowerCase().includes(searchValue.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || warranty.status === statusFilter;
+    const matchesProperty = propertyFilter === "all" || warranty.property === propertyFilter;
+    const matchesCategory = categoryFilter === "all" || warranty.category === categoryFilter;
+    const matchesPriority = priorityFilter === "all" || warranty.priority === priorityFilter;
+
+    return matchesSearch && matchesStatus && matchesProperty && matchesCategory && matchesPriority;
+  });
+
+  const handleExport = async () => {
+    try {
+      const result = await warrantyService.exportWarranties(currentUserId, currentUserRole, {
+        status: statusFilter !== "all" ? statusFilter as any : undefined,
+        priority: priorityFilter !== "all" ? priorityFilter : undefined
+      });
+
+      if (result.success) {
+        toast({
+          title: "Exportação concluída",
+          description: `${result.data?.length} registros exportados com sucesso.`,
+        });
+        console.log("Dados exportados:", result.data);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na exportação");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na exportação",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewWarranty = (warranty: WarrantyRequest) => {
+    const permissions = warrantyBusinessRules.getWarrantyPermissions(currentUserRole, warranty.createdBy === currentUserId);
+    
+    if (!permissions.canView) {
+      toast({
+        title: "Acesso negado",
+        description: "Você não tem permissão para visualizar esta garantia.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedWarranty(warranty);
+    setShowDetailModal(true);
+  };
+
+  const handleAssignTechnician = async (warranty: WarrantyRequest) => {
+    setWarrantyToAssign(warranty);
+    setShowAssignmentModal(true);
+  };
+
+  const handleTechnicianAssignment = async (warrantyId: string, technicianId: string, notes?: string) => {
+    try {
+      const result = await warrantyService.assignTechnician(
+        warrantyId,
+        technicianId,
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Técnico atribuído",
+          description: `Garantia atribuída ao técnico com sucesso.`,
+        });
+        loadWarranties();
+        setShowAssignmentModal(false);
+        setWarrantyToAssign(null);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na atribuição");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na atribuição",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateStatus = async (warranty: WarrantyRequest, newStatus: string) => {
+    try {
+      const result = await warrantyService.updateWarranty(
+        warranty.id,
+        { status: newStatus as any },
+        currentUserId,
+        currentUserRole
+      );
+
+      if (result.success) {
+        toast({
+          title: "Status atualizado",
+          description: `Status da garantia atualizado para ${
+            newStatus === 'complete' ? 'concluída' :
+            newStatus === 'progress' ? 'em andamento' : newStatus
+          }.`,
+        });
+        loadWarranties();
+        setShowDetailModal(false);
+      } else {
+        throw new Error(result.errors?.[0] || "Erro na atualização");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro na atualização",
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive",
       });
@@ -353,76 +923,93 @@ const Warranty = () => {
   }
 
   return (
-    <div className="space-y-8 p-8 max-w-7xl mx-auto">
-      <AdminHeader
-        title="Garantias"
-        description="Gerenciamento de solicitações de garantia e assistência técnica com regras de negócio otimizadas"
-        icon={<ShieldCheck className="h-8 w-8 text-primary" />}
-        actions={headerActions}
-        stats={stats}
-      />
+    <>
+      <div className="space-y-8 p-8 max-w-7xl mx-auto">
+        <AdminHeader
+          title="Garantias"
+          description="Gerenciamento de solicitações de garantia e assistência técnica com regras de negócio otimizadas"
+          icon={<ShieldCheck className="h-8 w-8 text-primary" />}
+          actions={headerActions}
+          stats={stats}
+        />
 
-      {/* Métricas adicionais */}
-      {metrics.averageResolutionTime > 0 && (
-        <div className="bg-white rounded-lg p-6 shadow-sm border">
-          <h3 className="text-lg font-semibold mb-4">Indicadores de Performance</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {Math.round(metrics.averageResolutionTime)}h
+        {/* Métricas adicionais */}
+        {metrics.averageResolutionTime > 0 && (
+          <div className="bg-white rounded-lg p-6 shadow-sm border">
+            <h3 className="text-lg font-semibold mb-4">Indicadores de Performance</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {Math.round(metrics.averageResolutionTime)}h
+                </div>
+                <div className="text-sm text-muted-foreground">Tempo médio de resolução</div>
               </div>
-              <div className="text-sm text-muted-foreground">Tempo médio de resolução</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">
-                {metrics.satisfactionAverage > 0 ? metrics.satisfactionAverage.toFixed(1) : 'N/A'}
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {metrics.satisfactionAverage > 0 ? metrics.satisfactionAverage.toFixed(1) : 'N/A'}
+                </div>
+                <div className="text-sm text-muted-foreground">Satisfação média</div>
               </div>
-              <div className="text-sm text-muted-foreground">Satisfação média</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {metrics.overdueRequests}
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {metrics.overdueRequests}
+                </div>
+                <div className="text-sm text-muted-foreground">Solicitações em atraso</div>
               </div>
-              <div className="text-sm text-muted-foreground">Solicitações em atraso</div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <AdminFilters
-        searchPlaceholder="Buscar garantias por título, cliente ou empreendimento..."
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        filters={filters}
-        onExport={handleExport}
-        resultCount={filteredWarranties.length}
-        activeFiltersCount={[statusFilter, propertyFilter, categoryFilter, priorityFilter].filter(f => f !== "all").length}
-        onClearFilters={() => {
-          setStatusFilter("all");
-          setPropertyFilter("all");
-          setCategoryFilter("all");
-          setPriorityFilter("all");
-          setSearchValue("");
-        }}
+        <AdminFilters
+          searchPlaceholder="Buscar garantias por título, cliente ou empreendimento..."
+          searchValue={searchValue}
+          onSearchChange={setSearchValue}
+          filters={filters}
+          onExport={handleExport}
+          resultCount={filteredWarranties.length}
+          activeFiltersCount={[statusFilter, propertyFilter, categoryFilter, priorityFilter].filter(f => f !== "all").length}
+          onClearFilters={() => {
+            setStatusFilter("all");
+            setPropertyFilter("all");
+            setCategoryFilter("all");
+            setPriorityFilter("all");
+            setSearchValue("");
+          }}
+        />
+
+        <AdminTable
+          columns={columns}
+          data={filteredWarranties}
+          actions={actions}
+          emptyState={{
+            icon: <ShieldCheck className="h-12 w-12 text-slate-400" />,
+            title: "Nenhuma garantia encontrada",
+            description: "Não há solicitações de garantia que correspondam aos filtros aplicados.",
+            action: (
+              <Button className="mt-4">
+                <Plus className="mr-2 h-4 w-4" />
+                Criar primeira solicitação
+              </Button>
+            )
+          }}
+        />
+      </div>
+
+      <WarrantyDetailModal
+        warranty={selectedWarranty}
+        open={showDetailModal}
+        onOpenChange={setShowDetailModal}
+        onAssignTechnician={handleAssignTechnician}
+        onUpdateStatus={handleUpdateStatus}
       />
 
-      <AdminTable
-        columns={columns}
-        data={filteredWarranties}
-        actions={actions}
-        emptyState={{
-          icon: <ShieldCheck className="h-12 w-12 text-slate-400" />,
-          title: "Nenhuma garantia encontrada",
-          description: "Não há solicitações de garantia que correspondam aos filtros aplicados.",
-          action: (
-            <Button className="mt-4">
-              <Plus className="mr-2 h-4 w-4" />
-              Criar primeira solicitação
-            </Button>
-          )
-        }}
+      <TechnicianAssignmentModal
+        warranty={warrantyToAssign}
+        open={showAssignmentModal}
+        onOpenChange={setShowAssignmentModal}
+        onAssign={handleTechnicianAssignment}
       />
-    </div>
+    </>
   );
 };
 
