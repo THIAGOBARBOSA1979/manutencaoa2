@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Plus, Download, AlertTriangle } from "lucide-react";
@@ -16,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EnhancedWarrantyRequestForm } from "@/components/Warranty/EnhancedWarrantyRequestForm";
 import { WarrantyCard } from "@/components/Warranty/WarrantyCard";
 import { WarrantySummary } from "@/components/Warranty/WarrantySummary";
+import { ClientWarrantyDisplay } from "@/components/Warranty/types";
 import { useToast } from "@/hooks/use-toast";
 import { warrantyService, CreateWarrantyData } from "@/services/WarrantyService";
 import { warrantyBusinessRules, WarrantyRequest, UserRole } from "@/services/WarrantyBusinessRules";
@@ -87,6 +87,28 @@ const ClientWarranty = () => {
     }
   };
 
+  // Convert WarrantyRequest to ClientWarrantyDisplay for the component
+  const convertToDisplayWarranty = (warranty: WarrantyRequest): ClientWarrantyDisplay => {
+    // Map canceled status to complete for display purposes
+    const displayStatus = warranty.status === 'canceled' ? 'complete' : warranty.status;
+    
+    return {
+      id: warranty.id,
+      title: warranty.title,
+      description: warranty.description,
+      property: warranty.property,
+      unit: warranty.unit,
+      createdAt: warranty.createdAt,
+      status: displayStatus as ClientWarrantyDisplay['status'],
+      category: warranty.category,
+      priority: warranty.priority,
+      estimatedResolutionTime: warranty.estimatedResolutionTime,
+      satisfactionRating: warranty.satisfactionRating,
+      isUrgent: warranty.isUrgent,
+      client: warranty.client
+    };
+  };
+
   const claim = selectedClaim 
     ? warranties.find(c => c.id === selectedClaim) 
     : null;
@@ -104,19 +126,23 @@ const ClientWarranty = () => {
   };
 
   // Filtrar solicitações baseado na aba ativa
-  const getFilteredClaims = () => {
-    switch (activeTab) {
-      case "pending":
-        return warranties.filter(c => c.status === "pending");
-      case "progress":
-        return warranties.filter(c => c.status === "progress");
-      case "critical":
-        return warranties.filter(c => c.status === "critical");
-      case "completed":
-        return warranties.filter(c => c.status === "complete");
-      default:
-        return warranties;
-    }
+  const getFilteredClaims = (): ClientWarrantyDisplay[] => {
+    const filteredWarranties = (() => {
+      switch (activeTab) {
+        case "pending":
+          return warranties.filter(c => c.status === "pending");
+        case "progress":
+          return warranties.filter(c => c.status === "progress");
+        case "critical":
+          return warranties.filter(c => c.status === "critical");
+        case "completed":
+          return warranties.filter(c => c.status === "complete" || c.status === "canceled");
+        default:
+          return warranties;
+      }
+    })();
+
+    return filteredWarranties.map(convertToDisplayWarranty);
   };
 
   const handleSubmit = async (data: any) => {

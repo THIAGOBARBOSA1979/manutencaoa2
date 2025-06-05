@@ -102,7 +102,15 @@ class WarrantyBusinessRules {
 
   // Validar criação de solicitação de garantia
   validateWarrantyCreation(
-    request: Partial<WarrantyRequest>,
+    request: {
+      title?: string;
+      description?: string;
+      category?: string;
+      priority?: PriorityLevel;
+      property?: string;
+      unit?: string;
+      client?: string;
+    },
     userRole: UserRole,
     userId: string
   ): { isValid: boolean; errors: string[] } {
@@ -191,7 +199,10 @@ class WarrantyBusinessRules {
   }
 
   // Calcular prioridade automática baseada em critérios
-  calculateAutoPriority(request: Partial<WarrantyRequest>): PriorityLevel {
+  calculateAutoPriority(request: {
+    category?: string;
+    description?: string;
+  }): PriorityLevel {
     let score = 0;
 
     // Critérios de urgência baseados na categoria

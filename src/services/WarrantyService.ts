@@ -1,5 +1,5 @@
 
-import { warrantyBusinessRules, WarrantyRequest, UserRole, WarrantyStatus } from './WarrantyBusinessRules';
+import { warrantyBusinessRules, WarrantyRequest, UserRole, WarrantyStatus, PriorityLevel } from './WarrantyBusinessRules';
 import { documentPermissionService } from './DocumentPermissionService';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,7 +7,7 @@ export interface CreateWarrantyData {
   title: string;
   description: string;
   category: string;
-  priority?: string;
+  priority?: PriorityLevel;
   property: string;
   unit: string;
   client: string;
@@ -58,7 +58,7 @@ class WarrantyService {
     // Calcular tempo estimado de resolução
     const estimatedResolutionTime = warrantyBusinessRules.calculateEstimatedResolutionTime(
       data.category,
-      priority as any
+      priority
     );
 
     // Criar solicitação
@@ -67,7 +67,7 @@ class WarrantyService {
       title: data.title,
       description: data.description,
       category: data.category,
-      priority: priority as any,
+      priority: priority,
       status: 'pending',
       property: data.property,
       unit: data.unit,
