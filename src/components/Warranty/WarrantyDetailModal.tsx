@@ -27,7 +27,6 @@ import {
   Eye
 } from "lucide-react";
 import { WarrantyRequest } from "@/services/WarrantyBusinessRules";
-import { StatusBadge } from "@/components/shared/StatusBadge";
 import { WarrantyProblemsManager } from "./WarrantyProblemsManager";
 
 interface WarrantyDetailModalProps {
@@ -75,6 +74,50 @@ export const WarrantyDetailModal = ({
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      pending: { 
+        label: "Pendente", 
+        className: "bg-amber-100 text-amber-800 border-amber-200",
+        icon: <Clock className="h-3 w-3" />
+      },
+      progress: { 
+        label: "Em Andamento", 
+        className: "bg-blue-100 text-blue-800 border-blue-200",
+        icon: <Settings className="h-3 w-3 animate-spin" />
+      },
+      critical: { 
+        label: "Crítica", 
+        className: "bg-red-100 text-red-800 border-red-200",
+        icon: <AlertTriangle className="h-3 w-3" />
+      },
+      complete: { 
+        label: "Concluída", 
+        className: "bg-green-100 text-green-800 border-green-200",
+        icon: <CheckCircle className="h-3 w-3" />
+      },
+      canceled: { 
+        label: "Cancelada", 
+        className: "bg-gray-100 text-gray-800 border-gray-200",
+        icon: <CheckCircle className="h-3 w-3" />
+      }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig];
+    if (!config) {
+      return <Badge variant="outline">Status desconhecido</Badge>;
+    }
+    
+    return (
+      <Badge variant="outline" className={config.className}>
+        <span className="flex items-center gap-1">
+          {config.icon}
+          {config.label}
+        </span>
+      </Badge>
+    );
+  };
+
   const isOverdue = warranty.estimatedResolutionTime && warranty.status !== 'complete' && 
     new Date() > new Date(warranty.createdAt.getTime() + warranty.estimatedResolutionTime * 60 * 60 * 1000);
 
@@ -117,7 +160,7 @@ export const WarrantyDetailModal = ({
                   <CardContent className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-muted-foreground">Status:</span>
-                      <StatusBadge status={warranty.status} />
+                      {getStatusBadge(warranty.status)}
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-muted-foreground">Prioridade:</span>
