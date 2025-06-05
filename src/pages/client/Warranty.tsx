@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Plus, Download, AlertTriangle } from "lucide-react";
@@ -407,7 +408,7 @@ const ClientWarranty = () => {
           <div className="lg:col-span-2">
             {claim ? (
               <WarrantyCard
-                warranty={claim}
+                warranty={convertToDisplayWarranty(claim)}
                 variant="detailed"
                 onViewDetails={() => console.log("View details")}
                 onRate={handleRateWarranty}

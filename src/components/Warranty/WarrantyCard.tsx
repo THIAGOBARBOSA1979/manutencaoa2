@@ -1,25 +1,17 @@
 
 import { format } from "date-fns";
-import { Calendar, AlertTriangle, Clock, CheckCircle, FileText, User } from "lucide-react";
+import { Calendar, AlertTriangle, Clock, CheckCircle, FileText, User, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ClientWarrantyDisplay } from "./types";
 
 interface WarrantyCardProps {
-  warranty: {
-    id: string;
-    title: string;
-    description: string;
-    property: string;
-    unit: string;
-    createdAt: Date;
-    status: "pending" | "progress" | "complete" | "critical";
-    category?: string;
-    priority?: string;
-  };
+  warranty: ClientWarrantyDisplay;
   onSelect?: () => void;
   onViewDetails?: () => void;
+  onRate?: (warrantyId: string, rating: number) => Promise<void>;
   isSelected?: boolean;
   variant?: "compact" | "detailed";
 }
@@ -28,6 +20,7 @@ export const WarrantyCard = ({
   warranty, 
   onSelect, 
   onViewDetails,
+  onRate,
   isSelected = false,
   variant = "compact"
 }: WarrantyCardProps) => {
@@ -70,6 +63,12 @@ export const WarrantyCard = ({
     }
   };
 
+  const handleRating = (rating: number) => {
+    if (onRate) {
+      onRate(warranty.id, rating);
+    }
+  };
+
   if (variant === "compact") {
     return (
       <Card 
@@ -107,6 +106,28 @@ export const WarrantyCard = ({
           <p className="text-xs text-muted-foreground mt-3 line-clamp-2">
             {warranty.description}
           </p>
+          
+          {warranty.status === "complete" && !warranty.satisfactionRating && onRate && (
+            <div className="mt-3 pt-3 border-t">
+              <p className="text-xs text-muted-foreground mb-2">Avalie o atendimento:</p>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <Button
+                    key={rating}
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-auto"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRating(rating);
+                    }}
+                  >
+                    <Star className="h-3 w-3 text-yellow-400" />
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -150,6 +171,24 @@ export const WarrantyCard = ({
           </div>
         </div>
         
+        {warranty.satisfactionRating && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Avaliação:</span>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-4 w-4 ${
+                    star <= warranty.satisfactionRating!
+                      ? "text-yellow-400 fill-yellow-400"
+                      : "text-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div className="flex gap-2 pt-4 border-t">
           <Button variant="outline" size="sm" onClick={onViewDetails}>
             Ver Detalhes
@@ -157,6 +196,19 @@ export const WarrantyCard = ({
           <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80">
             Acompanhar
           </Button>
+          {warranty.status === "complete" && !warranty.satisfactionRating && onRate && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                // Simular uma avaliação de 5 estrelas para demonstração
+                handleRating(5);
+              }}
+            >
+              <Star className="h-4 w-4 mr-1" />
+              Avaliar
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
