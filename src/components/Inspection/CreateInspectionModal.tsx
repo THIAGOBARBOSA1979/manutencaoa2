@@ -11,15 +11,11 @@ interface CreateInspectionModalProps {
 }
 
 export function CreateInspectionModal({ open, onOpenChange, onSubmit }: CreateInspectionModalProps) {
-  const handleSubmit = (data: any) => {
-    console.log("Nova vistoria agendada:", data);
+  const handleSuccess = () => {
+    console.log("Nova vistoria agendada com sucesso");
     if (onSubmit) {
-      onSubmit(data);
+      onSubmit({});
     }
-    onOpenChange(false);
-  };
-
-  const handleCancel = () => {
     onOpenChange(false);
   };
 
@@ -38,8 +34,7 @@ export function CreateInspectionModal({ open, onOpenChange, onSubmit }: CreateIn
         
         <div className="mt-6">
           <ScheduleInspectionForm 
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
+            onSuccess={handleSuccess}
           />
         </div>
       </DialogContent>
