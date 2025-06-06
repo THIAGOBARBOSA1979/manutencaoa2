@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ShieldCheck, Plus, Eye, Settings, AlertTriangle, Clock, CheckCircle, FileText } from "lucide-react";
 import { AdminHeader } from "@/components/Admin/AdminHeader";
@@ -13,6 +12,7 @@ import { warrantyService } from "@/services/WarrantyService";
 import { warrantyBusinessRules, WarrantyRequest, UserRole } from "@/services/WarrantyBusinessRules";
 import { WarrantyDetailModal } from "@/components/Warranty/WarrantyDetailModal";
 import { TechnicianAssignmentModal } from "@/components/Warranty/TechnicianAssignmentModal";
+import { CreateWarrantyModal } from "@/components/Warranty/CreateWarrantyModal";
 
 const Warranty = () => {
   const { toast } = useToast();
@@ -27,6 +27,7 @@ const Warranty = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [warrantyToAssign, setWarrantyToAssign] = useState<WarrantyRequest | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Simulando usuário admin
   const currentUserId = "admin-001";
@@ -183,6 +184,16 @@ const Warranty = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleCreateWarranty = (data: any) => {
+    console.log("Criando nova garantia:", data);
+    // Aqui seria chamado o serviço para criar a garantia
+    toast({
+      title: "Garantia criada",
+      description: "Nova solicitação de garantia criada com sucesso.",
+    });
+    loadWarranties();
   };
 
   const getStatusBadge = (status: string) => {
@@ -374,7 +385,10 @@ const Warranty = () => {
   ];
 
   const headerActions = (
-    <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+    <Button 
+      className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+      onClick={() => setShowCreateModal(true)}
+    >
       <Plus className="mr-2 h-4 w-4" />
       Nova Solicitação
     </Button>
@@ -477,6 +491,12 @@ const Warranty = () => {
         open={showAssignmentModal}
         onOpenChange={setShowAssignmentModal}
         onAssign={handleTechnicianAssignment}
+      />
+
+      <CreateWarrantyModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onSubmit={handleCreateWarranty}
       />
     </>
   );
