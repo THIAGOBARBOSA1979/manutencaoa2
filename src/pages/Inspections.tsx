@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ClipboardCheck, Plus, Eye, Edit, Calendar, User, MapPin } from "lucide-react";
 import { AdminHeader } from "@/components/Admin/AdminHeader";
@@ -6,6 +5,7 @@ import { AdminFilters } from "@/components/Admin/AdminFilters";
 import { AdminTable } from "@/components/Admin/AdminTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CreateInspectionModal } from "@/components/Inspection/CreateInspectionModal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -64,6 +64,7 @@ const Inspections = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Calculate stats
   const stats = [
@@ -86,6 +87,14 @@ const Inspections = () => {
 
     return matchesSearch && matchesStatus && matchesProperty && matchesType;
   });
+
+  const handleCreateInspection = (data: any) => {
+    console.log("Nova vistoria criada:", data);
+    toast({
+      title: "Vistoria agendada",
+      description: "A vistoria foi agendada com sucesso.",
+    });
+  };
 
   const handleExport = () => {
     toast({
@@ -232,7 +241,10 @@ const Inspections = () => {
   ];
 
   const headerActions = (
-    <Button className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+    <Button 
+      onClick={() => setIsCreateModalOpen(true)}
+      className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+    >
       <Plus className="mr-2 h-4 w-4" />
       Nova Vistoria
     </Button>
@@ -273,12 +285,18 @@ const Inspections = () => {
           title: "Nenhuma vistoria encontrada",
           description: "Não há vistorias que correspondam aos filtros aplicados.",
           action: (
-            <Button className="mt-4">
+            <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4">
               <Plus className="mr-2 h-4 w-4" />
               Agendar primeira vistoria
             </Button>
           )
         }}
+      />
+
+      <CreateInspectionModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSubmit={handleCreateInspection}
       />
     </div>
   );

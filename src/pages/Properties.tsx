@@ -7,7 +7,7 @@ import { AdminFilters } from "@/components/Admin/AdminFilters";
 import { AdminTable } from "@/components/Admin/AdminTable";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { EnhancedPropertyForm } from "@/components/Properties/EnhancedPropertyForm";
+import { PropertyFormRefactored } from "@/components/Properties/PropertyFormRefactored";
 import {
   Dialog,
   DialogContent,
@@ -96,7 +96,7 @@ const Properties = () => {
     
     toast({
       title: "Sucesso!",
-      description: "Empreendimento cadastrado com sucesso.",
+      description: `Empreendimento "${data.name}" cadastrado com sucesso.`,
     });
     
     setIsDialogOpen(false);
@@ -229,10 +229,10 @@ const Properties = () => {
           <DialogHeader>
             <DialogTitle>Cadastrar Novo Empreendimento</DialogTitle>
             <DialogDescription>
-              Preencha todas as informações do novo empreendimento abaixo.
+              Preencha todas as informações do novo empreendimento seguindo os padrões do sistema.
             </DialogDescription>
           </DialogHeader>
-          <EnhancedPropertyForm 
+          <PropertyFormRefactored 
             onSubmit={handlePropertySubmit}
             onCancel={() => setIsDialogOpen(false)}
           />
