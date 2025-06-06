@@ -1,41 +1,35 @@
 
-import { User, Mail, Phone, Home, FileText, Calendar, ShieldCheck } from "lucide-react";
+import { User, Mail, Phone, Home, FileText, Calendar, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-
-interface ExtendedClient {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  property: string;
-  unit: string;
-  status: string;
-  createdAt: Date;
-  lastLogin: Date;
-  documents: { id: string; title: string; uploadedAt: Date; }[];
-  inspections: { id: string; title: string; date: Date; status: string; }[];
-  warrantyClaims: { id: string; title: string; description: string; createdAt: Date; status: string; }[];
-}
+import { ClientData } from "@/services/ClientAreaBusinessRules";
 
 interface ClientDetailsProps {
-  client: ExtendedClient;
+  client: ClientData;
   onClose: () => void;
+  canEdit?: boolean;
+  canViewSensitive?: boolean;
 }
 
-export function ClientDetails({ client, onClose }: ClientDetailsProps) {
+export function ClientDetails({ 
+  client, 
+  onClose, 
+  canEdit = false,
+  canViewSensitive = false 
+}: ClientDetailsProps) {
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Detalhes do Cliente
+            Detalhes do Cliente - {client.name}
           </CardTitle>
           <Button variant="outline" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
             Fechar
           </Button>
         </div>
@@ -56,12 +50,17 @@ export function ClientDetails({ client, onClose }: ClientDetailsProps) {
                 <div className="space-y-2">
                   <p className="flex items-center gap-2 text-sm">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    {client.email}
+                    {canViewSensitive ? client.email : '***@***.***'}
                   </p>
                   <p className="flex items-center gap-2 text-sm">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    {client.phone}
+                    {canViewSensitive ? client.phone : '(**) ****-****'}
                   </p>
+                  {client.cpf && (
+                    <p className="text-sm">
+                      CPF: {canViewSensitive ? client.cpf : '***.***.***-**'}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
@@ -72,6 +71,64 @@ export function ClientDetails({ client, onClose }: ClientDetailsProps) {
                     {client.property}
                   </p>
                   <p className="text-sm">Unidade: {client.unit}</p>
+                  <p className="text-sm">
+                    Nível de Acesso: 
+                    <Badge variant="outline" className="ml-2">
+                      {client.accessLevel === 'full' ? 'Completo' :
+                       client.accessLevel === 'limited' ? 'Limitado' : 'Somente Leitura'}
+                    </Badge>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+              <div>
+                <h3 className="font-medium mb-3">Status e Datas</h3>
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    Status: 
+                    <Badge 
+                      variant="outline" 
+                      className={`ml-2 ${
+                        client.status === 'active' ? 'bg-green-50 text-green-700' :
+                        client.status === 'pending' ? 'bg-yellow-50 text-yellow-700' :
+                        client.status === 'suspended' ? 'bg-red-50 text-red-700' :
+                        'bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      {client.status === 'active' ? 'Ativo' :
+                       client.status === 'pending' ? 'Pendente' :
+                       client.status === 'suspended' ? 'Suspenso' : 'Inativo'}
+                    </Badge>
+                  </p>
+                  <p className="text-sm">
+                    Cadastrado em: {format(client.createdAt, "dd/MM/yyyy")}
+                  </p>
+                  <p className="text-sm">
+                    Último login: {client.lastLogin ? format(client.lastLogin, "dd/MM/yyyy 'às' HH:mm") : 'Nunca'}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-medium mb-3">Credenciais</h3>
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    Possui credenciais: 
+                    <Badge variant="outline" className={`ml-2 ${client.credentials ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                      {client.credentials ? 'Sim' : 'Não'}
+                    </Badge>
+                  </p>
+                  {client.credentials && (
+                    <>
+                      <p className="text-sm">
+                        Usuário: {canViewSensitive ? client.credentials.username : '***'}
+                      </p>
+                      <p className="text-sm">
+                        Última troca de senha: {format(client.credentials.lastPasswordChange, "dd/MM/yyyy")}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -79,65 +136,68 @@ export function ClientDetails({ client, onClose }: ClientDetailsProps) {
 
           <TabsContent value="documents" className="mt-4">
             <div className="space-y-4">
-              {client.documents?.map((doc: any) => (
-                <Card key={doc.id}>
-                  <CardHeader className="p-4">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      {doc.title}
-                    </CardTitle>
-                    <CardDescription>
-                      Adicionado em {format(doc.uploadedAt, "dd/MM/yyyy")}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardFooter className="p-4">
-                    <Button variant="outline" size="sm">
-                      Visualizar
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+              {client.documents?.length > 0 ? (
+                client.documents.map((doc) => (
+                  <Card key={doc.id}>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        {doc.title}
+                      </CardTitle>
+                      <CardDescription>
+                        Adicionado em {format(doc.uploadedAt, "dd/MM/yyyy")}
+                        {doc.isRequired && (
+                          <Badge variant="destructive" className="ml-2">Obrigatório</Badge>
+                        )}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum documento encontrado.
+                </p>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="inspections" className="mt-4">
             <div className="space-y-4">
-              {client.inspections?.map((inspection: any) => (
-                <Card key={inspection.id}>
-                  <CardHeader className="p-4">
-                    <CardTitle className="text-lg">{inspection.title}</CardTitle>
-                    <CardDescription>
-                      Agendada para {format(inspection.date, "dd/MM/yyyy 'às' HH:mm")}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardFooter className="p-4">
-                    <Badge variant={inspection.status === "completed" ? "secondary" : "outline"}>
-                      {inspection.status === "scheduled" ? "Agendada" : "Concluída"}
-                    </Badge>
-                  </CardFooter>
-                </Card>
-              ))}
+              {client.inspections?.length > 0 ? (
+                client.inspections.map((inspection) => (
+                  <Card key={inspection.id}>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg">{inspection.title}</CardTitle>
+                      <CardDescription>
+                        Data: {format(inspection.date, "dd/MM/yyyy")}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhuma vistoria encontrada.
+                </p>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="warranty" className="mt-4">
             <div className="space-y-4">
-              {client.warrantyClaims?.map((claim: any) => (
-                <Card key={claim.id}>
-                  <CardHeader className="p-4">
-                    <CardTitle className="text-lg">{claim.title}</CardTitle>
-                    <CardDescription>{claim.description}</CardDescription>
-                  </CardHeader>
-                  <CardFooter className="p-4 flex justify-between">
-                    <Badge variant={claim.status === "completed" ? "secondary" : "outline"}>
-                      {claim.status === "pending" ? "Pendente" : "Concluída"}
-                    </Badge>
-                    <Button variant="outline" size="sm">
-                      Ver detalhes
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+              {client.warrantyClaims?.length > 0 ? (
+                client.warrantyClaims.map((claim) => (
+                  <Card key={claim.id}>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg">{claim.title}</CardTitle>
+                      <CardDescription>{claim.description}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhuma solicitação de garantia encontrada.
+                </p>
+              )}
             </div>
           </TabsContent>
         </Tabs>

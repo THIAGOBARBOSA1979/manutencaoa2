@@ -3,67 +3,66 @@ import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Key, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
-import { cn } from "@/lib/utils";
+import { ClientData } from "@/services/ClientAreaBusinessRules";
 
 // Form schema with validation
 const formSchema = z.object({
-  email: z.string().email({
-    message: "Digite um email válido"
-  }),
-  sendEmail: z.boolean().default(true),
-  generatePassword: z.boolean().default(true),
-  password: z.string().optional(),
   clientId: z.string({
     required_error: "Selecione um cliente"
-  })
+  }),
+  username: z.string().min(3, {
+    message: "Nome de usuário deve ter pelo menos 3 caracteres"
+  }),
+  sendByEmail: z.boolean().default(true),
+  temporaryPassword: z.boolean().default(true),
+  customPassword: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Mock client data - will be replaced with real data from API
-const mockClients = [
-  { id: "1", name: "Maria Oliveira", email: "maria.oliveira@email.com" },
-  { id: "2", name: "João Silva", email: "joao.silva@email.com" },
-  { id: "3", name: "Ana Santos", email: "ana.santos@email.com" },
-];
-
 interface GenerateCredentialsFormProps {
+  clients: ClientData[];
   onSubmit?: (data: FormValues) => void;
   onCancel?: () => void;
 }
 
-export function GenerateCredentialsForm({ onSubmit, onCancel }: GenerateCredentialsFormProps) {
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
+export function GenerateCredentialsForm({ 
+  clients, 
+  onSubmit, 
+  onCancel 
+}: GenerateCredentialsFormProps) {
+  const [selectedClient, setSelectedClient] = useState<ClientData | null>(null);
   
   // Initialize form with validation
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       clientId: "",
-      email: "",
-      sendEmail: true,
-      generatePassword: true,
-      password: "",
+      username: "",
+      sendByEmail: true,
+      temporaryPassword: true,
+      customPassword: "",
     },
   });
   
   // Watch form values for conditional rendering
-  const generatePassword = form.watch("generatePassword");
+  const temporaryPassword = form.watch("temporaryPassword");
   
-  // Update email when client changes
+  // Update client data when selection changes
   const handleClientChange = (clientId: string) => {
-    const client = mockClients.find(c => c.id === clientId);
+    const client = clients.find(c => c.id === clientId);
     if (client) {
-      form.setValue("email", client.email);
+      setSelectedClient(client);
+      // Generate suggested username
+      const username = client.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      form.setValue("username", username);
     }
-    setSelectedClient(clientId);
   };
   
   // Handle form submission
@@ -105,9 +104,9 @@ export function GenerateCredentialsForm({ onSubmit, onCancel }: GenerateCredenti
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {mockClients.map(client => (
+                    {clients.map(client => (
                       <SelectItem key={client.id} value={client.id}>
-                        {client.name}
+                        {client.name} - {client.property} {client.unit}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -119,14 +118,21 @@ export function GenerateCredentialsForm({ onSubmit, onCancel }: GenerateCredenti
           
           {selectedClient && (
             <>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium mb-2">Informações do Cliente</h4>
+                <p className="text-sm text-muted-foreground">Email: {selectedClient.email}</p>
+                <p className="text-sm text-muted-foreground">Telefone: {selectedClient.phone}</p>
+                <p className="text-sm text-muted-foreground">Imóvel: {selectedClient.property} - {selectedClient.unit}</p>
+              </div>
+
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>Nome de usuário <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="cliente@email.com" type="email" {...field} />
+                      <Input placeholder="Digite o nome de usuário" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -135,7 +141,7 @@ export function GenerateCredentialsForm({ onSubmit, onCancel }: GenerateCredenti
               
               <FormField
                 control={form.control}
-                name="sendEmail"
+                name="sendByEmail"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
@@ -158,15 +164,15 @@ export function GenerateCredentialsForm({ onSubmit, onCancel }: GenerateCredenti
               
               <FormField
                 control={form.control}
-                name="generatePassword"
+                name="temporaryPassword"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">
-                        Gerar senha automática
+                        Senha temporária
                       </FormLabel>
                       <div className="text-sm text-muted-foreground">
-                        O sistema irá gerar uma senha aleatória segura
+                        O sistema irá gerar uma senha temporária que deve ser alterada no primeiro acesso
                       </div>
                     </div>
                     <FormControl>
@@ -179,13 +185,13 @@ export function GenerateCredentialsForm({ onSubmit, onCancel }: GenerateCredenti
                 )}
               />
               
-              {!generatePassword && (
+              {!temporaryPassword && (
                 <FormField
                   control={form.control}
-                  name="password"
+                  name="customPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Senha manual <span className="text-destructive">*</span></FormLabel>
+                      <FormLabel>Senha personalizada <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <Input placeholder="Digite uma senha" type="password" {...field} />
                       </FormControl>

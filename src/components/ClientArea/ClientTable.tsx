@@ -3,28 +3,33 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface ExtendedClient {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  property: string;
-  unit: string;
-  status: string;
-  createdAt: Date;
-  lastLogin: Date;
-  documents: { id: string; title: string; uploadedAt: Date; }[];
-  inspections: { id: string; title: string; date: Date; status: string; }[];
-  warrantyClaims: { id: string; title: string; description: string; createdAt: Date; status: string; }[];
-}
+import { ClientData } from "@/services/ClientAreaBusinessRules";
 
 interface ClientTableProps {
-  clients: ExtendedClient[];
-  onSelectClient: (client: ExtendedClient) => void;
+  clients: ClientData[];
+  onSelectClient: (client: ClientData) => void;
+  canView?: boolean;
+  canViewSensitive?: boolean;
 }
 
-export function ClientTable({ clients, onSelectClient }: ClientTableProps) {
+export function ClientTable({ 
+  clients, 
+  onSelectClient, 
+  canView = true,
+  canViewSensitive = false 
+}: ClientTableProps) {
+  if (!canView) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-center text-muted-foreground">
+            Você não tem permissão para visualizar clientes.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -49,12 +54,22 @@ export function ClientTable({ clients, onSelectClient }: ClientTableProps) {
             {clients.map(client => (
               <TableRow key={client.id}>
                 <TableCell className="font-medium">{client.name}</TableCell>
-                <TableCell>{client.email}</TableCell>
-                <TableCell>{client.phone}</TableCell>
+                <TableCell>{canViewSensitive ? client.email : '***@***.***'}</TableCell>
+                <TableCell>{canViewSensitive ? client.phone : '(**) ****-****'}</TableCell>
                 <TableCell>{client.property} - {client.unit}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="bg-green-50 text-green-700">
-                    Ativo
+                  <Badge 
+                    variant="outline" 
+                    className={
+                      client.status === 'active' ? 'bg-green-50 text-green-700' :
+                      client.status === 'pending' ? 'bg-yellow-50 text-yellow-700' :
+                      client.status === 'suspended' ? 'bg-red-50 text-red-700' :
+                      'bg-gray-50 text-gray-700'
+                    }
+                  >
+                    {client.status === 'active' ? 'Ativo' :
+                     client.status === 'pending' ? 'Pendente' :
+                     client.status === 'suspended' ? 'Suspenso' : 'Inativo'}
                   </Badge>
                 </TableCell>
                 <TableCell>

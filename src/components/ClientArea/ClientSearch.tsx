@@ -9,14 +9,22 @@ interface ClientSearchProps {
   onSearchChange: (value: string) => void;
   onSearch: () => void;
   onNewClient: () => void;
+  canCreate?: boolean;
+  canSearch?: boolean;
 }
 
 export function ClientSearch({ 
   searchQuery, 
   onSearchChange, 
   onSearch, 
-  onNewClient 
+  onNewClient,
+  canCreate = true,
+  canSearch = true
 }: ClientSearchProps) {
+  if (!canSearch) {
+    return null;
+  }
+
   return (
     <Card className="border-dashed">
       <CardHeader>
@@ -30,10 +38,12 @@ export function ClientSearch({
               Pesquise por nome, email ou telefone do cliente
             </CardDescription>
           </div>
-          <Button onClick={onNewClient} size="sm">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Novo Cliente
-          </Button>
+          {canCreate && (
+            <Button onClick={onNewClient} size="sm">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Novo Cliente
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
