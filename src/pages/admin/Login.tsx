@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { z } from "zod";
@@ -59,7 +58,7 @@ export default function AdminLogin() {
         localStorage.setItem("rememberAdmin", "true");
       }
       
-      await login(values.email, values.password, 'admin');
+      await login(values.email, values.password);
     } catch (error) {
       // Error handling is done in the AuthContext
       console.error("Login error:", error);

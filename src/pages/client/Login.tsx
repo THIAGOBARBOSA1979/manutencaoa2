@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { z } from "zod";
@@ -63,7 +62,7 @@ export default function ClientLogin() {
         localStorage.setItem("rememberClient", "true");
       }
       
-      await login(values.email, values.password, 'client');
+      await login(values.email, values.password);
     } catch (error) {
       // Error handling is done in the AuthContext
       console.error("Login error:", error);
