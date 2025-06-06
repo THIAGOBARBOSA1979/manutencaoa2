@@ -31,7 +31,7 @@ export const ProtectedRoute = ({
     return <Navigate to={redirectTo || '/login'} state={{ from: location }} replace />;
   }
 
-  // Authenticated but wrong role
+  // Authenticated but wrong role - redirect to correct dashboard
   if (user && user.role !== requiredRole) {
     const correctPath = user.role === 'admin' ? '/admin' : '/client';
     return <Navigate to={correctPath} replace />;

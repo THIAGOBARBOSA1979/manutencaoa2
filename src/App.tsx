@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StrictMode, useState, useEffect } from "react";
 
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -75,8 +75,8 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 
                 {/* Legacy login routes that redirect to unified login */}
-                <Route path="/admin/login" element={<Login />} />
-                <Route path="/client/login" element={<Login />} />
+                <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+                <Route path="/client/login" element={<Navigate to="/login" replace />} />
                 
                 {/* Protected Admin Routes */}
                 <Route path="/admin" element={

@@ -14,7 +14,13 @@ export interface AuthState {
 }
 
 export interface AuthContextType extends AuthState {
-  login: (email: string, password: string, role?: 'admin' | 'client') => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => void;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
 }
