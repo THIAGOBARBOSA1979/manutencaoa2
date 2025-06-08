@@ -16,6 +16,7 @@ import Login from "./pages/Login";
 
 // Admin pages and layout
 import { AppLayout } from "./components/Layout/AppLayout";
+import { AdminDashboard } from "./components/Admin/AdminDashboard";
 import AdminDocuments from "./pages/admin/Documents";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
@@ -69,7 +70,7 @@ const App = () => {
             <AuthProvider>
               <Routes>
                 {/* Public Routes */}
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<Index />} />
                 
                 {/* Unified Login Route */}
                 <Route path="/login" element={<Login />} />
@@ -81,7 +82,7 @@ const App = () => {
                 {/* Protected Admin Routes */}
                 <Route path="/admin" element={
                   <ProtectedRoute requiredRole="admin">
-                    <AppLayout><Index /></AppLayout>
+                    <AppLayout><AdminDashboard /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/admin/properties" element={
