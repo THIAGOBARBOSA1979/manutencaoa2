@@ -1,7 +1,6 @@
 
-import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScheduleInspectionForm } from "./ScheduleInspectionForm";
+import { EnhancedScheduleInspectionForm } from "./EnhancedScheduleInspectionForm";
 import { ClipboardCheck } from "lucide-react";
 
 interface CreateInspectionModalProps {
@@ -11,30 +10,35 @@ interface CreateInspectionModalProps {
 }
 
 export function CreateInspectionModal({ open, onOpenChange, onSubmit }: CreateInspectionModalProps) {
-  const handleSuccess = () => {
-    console.log("Nova vistoria agendada com sucesso");
+  const handleSubmit = (data: any) => {
+    console.log("Nova vistoria agendada:", data);
     if (onSubmit) {
-      onSubmit({});
+      onSubmit(data);
     }
+    onOpenChange(false);
+  };
+
+  const handleCancel = () => {
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5" />
             Agendar Nova Vistoria
           </DialogTitle>
           <DialogDescription>
-            Agende uma nova vistoria seguindo as regras de negócio estabelecidas
+            Agende uma nova vistoria no sistema com todas as informações necessárias
           </DialogDescription>
         </DialogHeader>
         
         <div className="mt-6">
-          <ScheduleInspectionForm 
-            onSuccess={handleSuccess}
+          <EnhancedScheduleInspectionForm 
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
           />
         </div>
       </DialogContent>

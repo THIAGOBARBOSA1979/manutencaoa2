@@ -4,13 +4,17 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { v4 as uuidv4 } from 'uuid';
-import { Plus, AlertTriangle, User, Building, MapPin } from "lucide-react";
+import { Plus, AlertTriangle, User, Building, MapPin, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/components/ui/use-toast";
+import { EnhancedForm } from "@/components/ui/enhanced-form";
+import { FormSection } from "@/components/ui/form-section";
+import { FormActions } from "@/components/ui/form-actions";
+import { BaseField, FloatingLabelInput } from "@/components/ui/form-field";
 import { WarrantyProblemItem, WarrantyProblem } from "@/components/Warranty/WarrantyProblemItem";
 import { mockProperties } from "@/services/SharedDataService";
 
@@ -72,9 +76,6 @@ export function EnhancedWarrantyRequestForm({ onSubmit, onCancel }: EnhancedWarr
       additionalInfo: ""
     },
   });
-  
-  const selectedClient = form.watch("client");
-  const selectedProperty = form.watch("property");
   
   // Handle problem change
   const handleProblemChange = (index: number, field: keyof WarrantyProblem, value: any) => {
@@ -171,202 +172,229 @@ export function EnhancedWarrantyRequestForm({ onSubmit, onCancel }: EnhancedWarr
   };
   
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Informações do Cliente e Imóvel */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium border-b pb-2">Informações do Cliente e Imóvel</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="client"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Cliente <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
+    <EnhancedForm
+      title="Nova Solicitação de Garantia"
+      description="Registre problemas encontrados no imóvel para análise da nossa equipe técnica"
+      variant="minimal"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+          <FormSection
+            title="Informações do Cliente e Imóvel"
+            description="Identifique o cliente e a propriedade relacionada"
+            icon={<User className="h-5 w-5" />}
+            variant="card"
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="client"
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Cliente"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && !!field.value}
+                  >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger className={fieldState.error ? "border-destructive" : ""}>
                         <SelectValue placeholder="Selecione um cliente" />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clients.map(client => (
-                        <SelectItem key={client.id} value={client.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{client.name}</span>
-                            <span className="text-sm text-muted-foreground">{client.email}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="property"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <Building className="h-4 w-4" />
-                    Empreendimento <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
+                      <SelectContent>
+                        {clients.map(client => (
+                          <SelectItem key={client.id} value={client.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{client.name}</span>
+                              <span className="text-xs text-muted-foreground">{client.email}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </BaseField>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="property"
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Empreendimento"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && !!field.value}
+                  >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger className={fieldState.error ? "border-destructive" : ""}>
                         <SelectValue placeholder="Selecione um empreendimento" />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {mockProperties.map(property => (
-                        <SelectItem key={property.id} value={property.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{property.name}</span>
-                            <span className="text-sm text-muted-foreground">{property.location}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="unit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Unidade <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: 204, 507, 101A" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      <SelectContent>
+                        {mockProperties.map(property => (
+                          <SelectItem key={property.id} value={property.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{property.name}</span>
+                              <span className="text-xs text-muted-foreground">{property.location}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </BaseField>
+                )}
+              />
+            </div>
             
-            <FormField
-              control={form.control}
-              name="contactPreference"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Preferência de contato</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Unidade"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && !!field.value}
+                    hint="Ex: 204, 507, 101A"
+                  >
+                    <FloatingLabelInput
+                      {...field}
+                      label="Unidade"
+                      placeholder="Ex: 204, 507, 101A"
+                      required
+                      error={fieldState.error?.message}
+                      success={!fieldState.error && !!field.value}
+                    />
+                  </BaseField>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="contactPreference"
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Preferência de contato"
+                    error={fieldState.error?.message}
+                  >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <SelectTrigger>
                         <SelectValue placeholder="Como prefere ser contatado?" />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="email">E-mail</SelectItem>
-                      <SelectItem value="phone">Telefone</SelectItem>
-                      <SelectItem value="any">Qualquer um</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
+                      <SelectContent>
+                        <SelectItem value="email">E-mail</SelectItem>
+                        <SelectItem value="phone">Telefone</SelectItem>
+                        <SelectItem value="any">Qualquer um</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </BaseField>
+                )}
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Detalhes da Solicitação"
+            description="Informações sobre o problema reportado"
+            icon={<FileText className="h-5 w-5" />}
+            variant="card"
+          >
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Título da solicitação"
+                  required
+                  error={fieldState.error?.message}
+                  success={!fieldState.error && field.value?.length >= 5}
+                  hint="Resumo claro do problema encontrado"
+                >
+                  <FloatingLabelInput
+                    {...field}
+                    label="Título da solicitação"
+                    placeholder="Ex: Problemas de infiltração no banheiro"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && field.value?.length >= 5}
+                  />
+                </BaseField>
               )}
             />
-          </div>
-        </div>
-
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Título da solicitação <span className="text-destructive">*</span></FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Problemas de infiltração no banheiro" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        {/* Problems Section */}
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-lg font-medium">Problemas Reportados</h3>
-            <p className="text-sm text-muted-foreground mt-1 sm:mt-0">
-              Adicione todos os problemas que deseja reportar
-            </p>
-          </div>
+          </FormSection>
           
-          {problems.length > 2 && (
-            <Alert variant="default" className="bg-amber-50 text-amber-900 border-amber-200">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <AlertDescription>
-                Você está reportando múltiplos problemas. Considere agrupar problemas similares ou do mesmo ambiente.
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {problems.map((problem, index) => (
-            <WarrantyProblemItem
-              key={problem.id}
-              index={index}
-              problem={problem}
-              onChange={handleProblemChange}
-              onRemove={removeProblem}
-            />
-          ))}
-          
-          <Button
-            type="button"
-            variant="outline"
-            onClick={addProblem}
-            className="w-full"
+          {/* Problems Section */}
+          <FormSection
+            title="Problemas Reportados"
+            description="Adicione todos os problemas que deseja reportar"
+            icon={<AlertTriangle className="h-5 w-5" />}
+            variant="card"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Adicionar outro problema
-          </Button>
-        </div>
-        
-        {/* Additional Information Field */}
-        <FormField
-          control={form.control}
-          name="additionalInfo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Informações adicionais</FormLabel>
-              <FormControl>
-                <textarea 
-                  className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
-                  placeholder="Forneça qualquer informação adicional que possa ajudar nossa equipe técnica"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="flex justify-end gap-3 pt-2">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
+            {problems.length > 2 && (
+              <Alert variant="default" className="bg-amber-50 text-amber-900 border-amber-200">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription>
+                  Você está reportando múltiplos problemas. Considere agrupar problemas similares ou do mesmo ambiente.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {problems.map((problem, index) => (
+              <WarrantyProblemItem
+                key={problem.id}
+                index={index}
+                problem={problem}
+                onChange={handleProblemChange}
+                onRemove={removeProblem}
+              />
+            ))}
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addProblem}
+              className="w-full"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar outro problema
             </Button>
-          )}
-          <Button type="submit">
-            Enviar solicitação
-          </Button>
-        </div>
-      </form>
-    </Form>
+          </FormSection>
+          
+          <FormSection
+            title="Informações Adicionais"
+            description="Qualquer informação complementar (opcional)"
+            icon={<FileText className="h-5 w-5" />}
+            variant="minimal"
+          >
+            <FormField
+              control={form.control}
+              name="additionalInfo"
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Informações adicionais"
+                  error={fieldState.error?.message}
+                  hint="Forneça qualquer informação adicional que possa ajudar nossa equipe técnica"
+                >
+                  <Textarea 
+                    {...field}
+                    placeholder="Ex: O problema ocorre apenas quando chove, já tentei contatar o zelador..."
+                    className="min-h-[100px] resize-y"
+                  />
+                </BaseField>
+              )}
+            />
+          </FormSection>
+          
+          <FormActions
+            onCancel={onCancel}
+            submitText="Enviar Solicitação"
+            cancelText="Cancelar"
+            loading={false}
+            disabled={!form.formState.isValid}
+            variant="floating"
+          />
+        </form>
+      </Form>
+    </EnhancedForm>
   );
 }
