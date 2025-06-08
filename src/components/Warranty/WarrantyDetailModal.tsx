@@ -1,371 +1,169 @@
 
-import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Calendar, 
-  MapPin, 
-  User, 
-  Clock, 
-  AlertTriangle, 
-  CheckCircle,
-  FileText,
-  Star,
-  Settings,
-  Eye
-} from "lucide-react";
-import { WarrantyRequest } from "@/services/WarrantyBusinessRules";
-import { WarrantyProblemsManager } from "./WarrantyProblemsManager";
+import { Shield, User, MapPin, Clock, Calendar, AlertCircle, FileText } from "lucide-react";
 
 interface WarrantyDetailModalProps {
-  warranty: WarrantyRequest | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAssignTechnician?: (warranty: WarrantyRequest) => void;
-  onUpdateStatus?: (warranty: WarrantyRequest, newStatus: string) => void;
+  warranty: any;
 }
 
-export const WarrantyDetailModal = ({ 
-  warranty, 
-  open, 
-  onOpenChange,
-  onAssignTechnician,
-  onUpdateStatus
-}: WarrantyDetailModalProps) => {
-  const [showProblemsManager, setShowProblemsManager] = useState(false);
-
-  if (!warranty) return null;
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "complete":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "progress":
-        return <Settings className="h-4 w-4 text-blue-500 animate-spin" />;
-      case "critical":
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-amber-500" />;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "critical":
-        return "text-red-600 bg-red-100";
-      case "high":
-        return "text-orange-600 bg-orange-100";
-      case "medium":
-        return "text-yellow-600 bg-yellow-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
-  };
-
+export function WarrantyDetailModal({ open, onOpenChange, warranty }: WarrantyDetailModalProps) {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { 
-        label: "Pendente", 
-        className: "bg-amber-100 text-amber-800 border-amber-200",
-        icon: <Clock className="h-3 w-3" />
-      },
-      progress: { 
-        label: "Em Andamento", 
-        className: "bg-blue-100 text-blue-800 border-blue-200",
-        icon: <Settings className="h-3 w-3 animate-spin" />
-      },
-      critical: { 
-        label: "Crítica", 
-        className: "bg-red-100 text-red-800 border-red-200",
-        icon: <AlertTriangle className="h-3 w-3" />
-      },
-      complete: { 
-        label: "Concluída", 
-        className: "bg-green-100 text-green-800 border-green-200",
-        icon: <CheckCircle className="h-3 w-3" />
-      },
-      canceled: { 
-        label: "Cancelada", 
-        className: "bg-gray-100 text-gray-800 border-gray-200",
-        icon: <CheckCircle className="h-3 w-3" />
-      }
+      pending: { label: "Pendente", className: "bg-amber-100 text-amber-800 border-amber-200" },
+      progress: { label: "Em Andamento", className: "bg-blue-100 text-blue-800 border-blue-200" },
+      complete: { label: "Concluída", className: "bg-green-100 text-green-800 border-green-200" },
+      canceled: { label: "Cancelada", className: "bg-gray-100 text-gray-800 border-gray-200" }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig];
-    if (!config) {
-      return <Badge variant="outline">Status desconhecido</Badge>;
-    }
-    
-    return (
-      <Badge variant="outline" className={config.className}>
-        <span className="flex items-center gap-1">
-          {config.icon}
-          {config.label}
-        </span>
-      </Badge>
-    );
+    return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
   };
 
-  const isOverdue = warranty.estimatedResolutionTime && warranty.status !== 'complete' && 
-    new Date() > new Date(warranty.createdAt.getTime() + warranty.estimatedResolutionTime * 60 * 60 * 1000);
+  const getPriorityBadge = (priority: string) => {
+    const priorityConfig = {
+      low: { label: "Baixa", className: "bg-green-100 text-green-800" },
+      medium: { label: "Média", className: "bg-yellow-100 text-yellow-800" },
+      high: { label: "Alta", className: "bg-orange-100 text-orange-800" },
+      critical: { label: "Crítica", className: "bg-red-100 text-red-800" }
+    };
+    
+    const config = priorityConfig[priority as keyof typeof priorityConfig];
+    return <Badge variant="secondary" className={config.className}>{config.label}</Badge>;
+  };
+
+  if (!warranty) return null;
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl flex items-center gap-2">
-              {getStatusIcon(warranty.status)}
-              {warranty.title}
-              {isOverdue && (
-                <Badge variant="destructive" className="text-xs">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Atrasada
-                </Badge>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              Protocolo #{warranty.id.padStart(6, '0')} • Criado em {format(warranty.createdAt, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Detalhes da Solicitação de Garantia
+          </DialogTitle>
+          <DialogDescription>
+            Informações completas sobre a solicitação
+          </DialogDescription>
+        </DialogHeader>
 
-          <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="details">Detalhes</TabsTrigger>
-              <TabsTrigger value="timeline">Histórico</TabsTrigger>
-              <TabsTrigger value="actions">Ações</TabsTrigger>
-            </TabsList>
+        <div className="space-y-6">
+          {/* Título e Status */}
+          <div className="space-y-3">
+            <h3 className="text-xl font-semibold">{warranty.title}</h3>
+            <div className="flex items-center gap-3">
+              {getStatusBadge(warranty.status)}
+              {getPriorityBadge(warranty.priority)}
+              <Badge variant="outline" className="bg-slate-100 text-slate-700">
+                {warranty.category}
+              </Badge>
+            </div>
+          </div>
 
-            <TabsContent value="details" className="space-y-6 mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Informações Gerais
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-muted-foreground">Status:</span>
-                      {getStatusBadge(warranty.status)}
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-muted-foreground">Prioridade:</span>
-                      <Badge className={getPriorityColor(warranty.priority)}>
-                        {warranty.priority === 'critical' ? 'Crítica' : 
-                         warranty.priority === 'high' ? 'Alta' :
-                         warranty.priority === 'medium' ? 'Média' : 'Baixa'}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-muted-foreground">Categoria:</span>
-                      <span className="text-sm">{warranty.category}</span>
-                    </div>
-                    {warranty.estimatedResolutionTime && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">Tempo estimado:</span>
-                        <span className="text-sm">{warranty.estimatedResolutionTime}h</span>
-                      </div>
-                    )}
-                    {warranty.actualResolutionTime && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">Tempo real:</span>
-                        <span className="text-sm text-green-600">{warranty.actualResolutionTime}h</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+          <Separator />
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <MapPin className="h-5 w-5" />
-                      Localização
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <span className="text-sm font-medium text-muted-foreground">Empreendimento:</span>
-                      <p className="text-sm mt-1">{warranty.property}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-muted-foreground">Unidade:</span>
-                      <p className="text-sm mt-1">{warranty.unit}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-muted-foreground">Cliente:</span>
-                      <p className="text-sm mt-1">{warranty.client}</p>
-                    </div>
-                    {warranty.assignedTo && (
-                      <div>
-                        <span className="text-sm font-medium text-muted-foreground">Técnico responsável:</span>
-                        <p className="text-sm mt-1">{warranty.assignedTo}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+          {/* Informações do Cliente e Imóvel */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                  <User className="h-4 w-4" />
+                  Cliente
+                </div>
+                <div className="font-medium">{warranty.client}</div>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Descrição do Problema</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {warranty.description}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {warranty.satisfactionRating && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Star className="h-5 w-5 text-yellow-500" />
-                      Avaliação do Cliente
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`h-4 w-4 ${
-                              star <= warranty.satisfactionRating!
-                                ? "text-yellow-400 fill-yellow-400"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        ({warranty.satisfactionRating}/5)
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            <TabsContent value="timeline" className="space-y-4 mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Histórico da Solicitação</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <div className="w-px h-8 bg-gray-200"></div>
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">Solicitação criada</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(warranty.createdAt, "dd/MM/yyyy 'às' HH:mm")}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {warranty.assignedTo && (
-                      <div className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                          <div className="w-px h-8 bg-gray-200"></div>
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <p className="text-sm font-medium">Técnico atribuído</p>
-                          <p className="text-xs text-muted-foreground">
-                            Atribuído para {warranty.assignedTo}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {warranty.status === 'complete' && (
-                      <div className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <p className="text-sm font-medium">Solicitação concluída</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(warranty.updatedAt, "dd/MM/yyyy 'às' HH:mm")}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="actions" className="space-y-4 mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {!warranty.assignedTo && warranty.status === 'pending' && onAssignTechnician && (
-                  <Button 
-                    onClick={() => onAssignTechnician(warranty)}
-                    className="w-full"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    Atribuir Técnico
-                  </Button>
-                )}
-
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowProblemsManager(true)}
-                  className="w-full"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Gerenciar Problemas
-                </Button>
-
-                {warranty.status === 'progress' && onUpdateStatus && (
-                  <Button 
-                    onClick={() => onUpdateStatus(warranty, 'complete')}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Marcar como Concluída
-                  </Button>
-                )}
-
-                {warranty.status === 'pending' && warranty.assignedTo && onUpdateStatus && (
-                  <Button 
-                    onClick={() => onUpdateStatus(warranty, 'progress')}
-                    className="w-full"
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    Iniciar Atendimento
-                  </Button>
-                )}
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                  <MapPin className="h-4 w-4" />
+                  Imóvel
+                </div>
+                <div>
+                  <div className="font-medium">{warranty.property}</div>
+                  <div className="text-sm text-muted-foreground">Unidade {warranty.unit}</div>
+                </div>
               </div>
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
+            </div>
 
-      <WarrantyProblemsManager
-        warrantyId={warranty.id}
-        warrantyTitle={warranty.title}
-        open={showProblemsManager}
-        onOpenChange={setShowProblemsManager}
-      />
-    </>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                  <Calendar className="h-4 w-4" />
+                  Data de criação
+                </div>
+                <div className="font-medium">
+                  {format(warranty.createdAt, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  às {format(warranty.createdAt, "HH:mm")}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                  <User className="h-4 w-4" />
+                  Técnico responsável
+                </div>
+                <div className="font-medium">
+                  {warranty.technician || (
+                    <span className="text-muted-foreground italic">Não atribuído</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Descrição */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <FileText className="h-4 w-4" />
+              Descrição do problema
+            </div>
+            <div className="text-sm leading-relaxed bg-muted p-4 rounded-md">
+              {warranty.description}
+            </div>
+          </div>
+
+          {/* Prazo estimado */}
+          {warranty.estimatedCompletion && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  Prazo estimado para conclusão
+                </div>
+                <div className="font-medium">
+                  {format(warranty.estimatedCompletion, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Observações do técnico */}
+          {warranty.technicalNotes && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                  Observações técnicas
+                </div>
+                <div className="text-sm leading-relaxed bg-blue-50 p-4 rounded-md border border-blue-200">
+                  {warranty.technicalNotes}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
-};
+}

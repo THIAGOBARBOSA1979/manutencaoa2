@@ -1,25 +1,21 @@
 
-import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EnhancedWarrantyRequestForm } from "./EnhancedWarrantyRequestForm";
-import { Shield } from "lucide-react";
+import { Edit } from "lucide-react";
 
-interface CreateWarrantyModalProps {
+interface EditWarrantyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit?: (data: any) => void;
+  warranty: any;
+  onUpdate?: () => void;
 }
 
-export function CreateWarrantyModal({ open, onOpenChange, onSubmit }: CreateWarrantyModalProps) {
-  const handleSubmit = (data: any) => {
-    console.log("Nova solicitação de garantia:", data);
-    if (onSubmit) {
-      onSubmit(data);
+export function EditWarrantyModal({ open, onOpenChange, warranty, onUpdate }: EditWarrantyModalProps) {
+  const handleSuccess = () => {
+    console.log("Garantia editada com sucesso");
+    if (onUpdate) {
+      onUpdate();
     }
-    onOpenChange(false);
-  };
-
-  const handleCancel = () => {
     onOpenChange(false);
   };
 
@@ -28,18 +24,18 @@ export function CreateWarrantyModal({ open, onOpenChange, onSubmit }: CreateWarr
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Nova Solicitação de Garantia
+            <Edit className="h-5 w-5" />
+            Editar Solicitação de Garantia
           </DialogTitle>
           <DialogDescription>
-            Registre uma nova solicitação de garantia no sistema
+            Modifique as informações da solicitação
           </DialogDescription>
         </DialogHeader>
         
         <div className="mt-6">
           <EnhancedWarrantyRequestForm 
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
+            onSubmit={handleSuccess}
+            onCancel={() => onOpenChange(false)}
           />
         </div>
       </DialogContent>

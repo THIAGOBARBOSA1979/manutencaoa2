@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarIcon, Check, Info } from "lucide-react";
+import { CalendarIcon, Check, Info, Search, User, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -33,9 +33,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { ChecklistSelector } from "./ChecklistSelector";
+import { mockProperties, getClientProperty } from "@/services/SharedDataService";
 
 // Schema for form validation
 const formSchema = z.object({
+  client: z.string({
+    required_error: "Selecione um cliente",
+  }),
+  property: z.string({
+    required_error: "Selecione um imóvel",
+  }),
+  unit: z.string({
+    required_error: "Informe a unidade",
+  }),
   inspectionType: z.string({
     required_error: "Selecione o tipo de vistoria",
   }),
@@ -59,15 +69,25 @@ type FormValues = z.infer<typeof formSchema>;
 
 // Example data - in a real app, these would come from your database
 const inspectionTypes = [
-  { id: "keyDelivery", name: "Entrega de chaves" },
-  { id: "technicalInspection", name: "Vistoria técnica" },
-  { id: "postWork", name: "Pós-obra" }
+  { id: "pre-delivery", name: "Vistoria de Pré-entrega" },
+  { id: "delivery", name: "Entrega de chaves" },
+  { id: "maintenance", name: "Vistoria de manutenção" },
+  { id: "warranty", name: "Vistoria de garantia" }
 ];
 
 const technicians = [
   { id: "1", name: "Carlos Andrade" },
   { id: "2", name: "Luiza Mendes" },
-  { id: "3", name: "Roberto Santos" }
+  { id: "3", name: "Roberto Santos" },
+  { id: "4", name: "Ana Costa" },
+  { id: "5", name: "João Pereira" }
+];
+
+const clients = [
+  { id: "1", name: "Maria Oliveira", email: "maria@email.com" },
+  { id: "2", name: "João Silva", email: "joao@email.com" },
+  { id: "3", name: "Carlos Santos", email: "carlos@email.com" },
+  { id: "4", name: "Ana Costa", email: "ana@email.com" }
 ];
 
 const timeSlots = [
@@ -94,26 +114,32 @@ export const ScheduleInspectionForm = ({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      client: clientId || "",
+      property: propertyInfo?.property || "",
+      unit: propertyInfo?.unit || "",
       notes: "",
       notifyClient: true
     },
   });
 
+  const selectedClient = form.watch("client");
+  const selectedProperty = form.watch("property");
+
   const onSubmit = (data: FormValues) => {
     console.log("Form submitted:", data);
     
-    // Here you would send the data to your backend
-    // For now we'll just simulate success
-
+    const selectedClientData = clients.find(c => c.id === data.client);
+    const selectedPropertyData = mockProperties.find(p => p.name === data.property);
+    
     toast({
       title: "Vistoria agendada com sucesso",
-      description: `Agendada para ${format(data.date, "dd/MM/yyyy")} às ${data.time}`,
+      description: `Vistoria agendada para ${selectedClientData?.name} em ${data.property} - Unidade ${data.unit} no dia ${format(data.date, "dd/MM/yyyy")} às ${data.time}`,
     });
     
     if (data.notifyClient) {
       toast({
-        title: "Notificação enviada",
-        description: "O cliente foi notificado por e-mail.",
+        title: "Cliente notificado",
+        description: `E-mail de confirmação enviado para ${selectedClientData?.email}`,
       });
     }
     
@@ -125,25 +151,98 @@ export const ScheduleInspectionForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {propertyInfo && (
-          <div className="p-4 bg-muted rounded-md mb-4">
-            <h3 className="text-sm font-medium mb-2">Informações do imóvel</h3>
-            <p className="text-sm">{propertyInfo.property} - Unidade {propertyInfo.unit}</p>
-            <p className="text-sm text-muted-foreground">Cliente: {propertyInfo.client}</p>
-          </div>
-        )}
-        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="client"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Cliente <span className="text-destructive">*</span>
+                </FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cliente" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {clients.map(client => (
+                      <SelectItem key={client.id} value={client.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{client.name}</span>
+                          <span className="text-sm text-muted-foreground">{client.email}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="property"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-2">
+                  <Building className="h-4 w-4" />
+                  Empreendimento <span className="text-destructive">*</span>
+                </FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um empreendimento" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {mockProperties.map(property => (
+                      <SelectItem key={property.id} value={property.name}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{property.name}</span>
+                          <span className="text-sm text-muted-foreground">{property.location}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FormField
+            control={form.control}
+            name="unit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Unidade <span className="text-destructive">*</span></FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: 204, 507, 101A" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Número da unidade no empreendimento
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           <FormField
             control={form.control}
             name="inspectionType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tipo de Vistoria</FormLabel>
+                <FormLabel>Tipo de Vistoria <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo de vistoria" />
+                      <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -162,7 +261,7 @@ export const ScheduleInspectionForm = ({
             name="technician"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Responsável Técnico</FormLabel>
+                <FormLabel>Responsável Técnico <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -187,7 +286,7 @@ export const ScheduleInspectionForm = ({
             name="date"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Data da Vistoria</FormLabel>
+                <FormLabel>Data da Vistoria <span className="text-destructive">*</span></FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -228,7 +327,7 @@ export const ScheduleInspectionForm = ({
             name="time"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Horário</FormLabel>
+                <FormLabel>Horário <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -252,7 +351,7 @@ export const ScheduleInspectionForm = ({
           name="checklist"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Checklist de Verificação</FormLabel>
+              <FormLabel>Checklist de Verificação <span className="text-destructive">*</span></FormLabel>
               <ChecklistSelector onSelect={field.onChange} />
               <FormMessage />
             </FormItem>
@@ -296,7 +395,7 @@ export const ScheduleInspectionForm = ({
               <div className="space-y-1 leading-none">
                 <FormLabel>Notificar cliente</FormLabel>
                 <FormDescription>
-                  Enviar e-mail de notificação para o cliente
+                  Enviar e-mail de confirmação para o cliente
                 </FormDescription>
               </div>
             </FormItem>

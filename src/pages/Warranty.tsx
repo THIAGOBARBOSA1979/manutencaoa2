@@ -7,6 +7,7 @@ import { AdminTable } from "@/components/Admin/AdminTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreateWarrantyModal } from "@/components/Warranty/CreateWarrantyModal";
+import { WarrantyActions } from "@/components/Warranty/WarrantyActions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +24,8 @@ const warranties = [
     priority: "high" as const,
     status: "pending" as const,
     createdAt: new Date(2025, 4, 15, 14, 30),
-    technician: null
+    technician: null,
+    description: "Infiltração constante na parede do banheiro da suíte, próximo ao box."
   },
   {
     id: "2", 
@@ -35,7 +37,8 @@ const warranties = [
     priority: "medium" as const,
     status: "progress" as const,
     createdAt: new Date(2025, 4, 10, 9, 15),
-    technician: "Carlos Andrade"
+    technician: "Carlos Andrade",
+    description: "Fechadura da porta principal não está funcionando corretamente."
   },
   {
     id: "3",
@@ -47,7 +50,8 @@ const warranties = [
     priority: "critical" as const,
     status: "progress" as const,
     createdAt: new Date(2025, 4, 18, 16, 45),
-    technician: "João Pereira"
+    technician: "João Pereira",
+    description: "Fissura aparente na parede da sala de estar, necessita avaliação estrutural."
   },
   {
     id: "4",
@@ -59,7 +63,8 @@ const warranties = [
     priority: "low" as const,
     status: "complete" as const,
     createdAt: new Date(2025, 4, 5, 11, 20),
-    technician: "Luiza Mendes"
+    technician: "Luiza Mendes",
+    description: "Porta do armário da cozinha está empenada e não fecha adequadamente."
   }
 ];
 
@@ -189,24 +194,16 @@ const Warranty = () => {
           {value || <span className="text-slate-400">Não atribuído</span>}
         </div>
       )
-    }
-  ];
-
-  const actions = [
-    {
-      label: "Visualizar",
-      icon: <Eye className="h-4 w-4" />,
-      onClick: (row: any) => console.log("View", row)
     },
     {
-      label: "Editar",
-      icon: <Edit className="h-4 w-4" />,
-      onClick: (row: any) => console.log("Edit", row)
-    },
-    {
-      label: "Atribuir Técnico",
-      icon: <User className="h-4 w-4" />,
-      onClick: (row: any) => console.log("Assign technician", row)
+      key: "actions",
+      label: "Ações",
+      render: (value: any, row: any) => (
+        <WarrantyActions 
+          warranty={row} 
+          onUpdate={() => console.log("Update warranty", row.id)} 
+        />
+      )
     }
   ];
 
@@ -292,7 +289,6 @@ const Warranty = () => {
       <AdminTable
         columns={columns}
         data={filteredWarranties}
-        actions={actions}
         emptyState={{
           icon: <Shield className="h-12 w-12 text-slate-400" />,
           title: "Nenhuma solicitação encontrada",

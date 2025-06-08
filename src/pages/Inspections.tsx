@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ClipboardCheck, Plus, Eye, Edit, Calendar, User, MapPin } from "lucide-react";
 import { AdminHeader } from "@/components/Admin/AdminHeader";
@@ -6,6 +7,7 @@ import { AdminTable } from "@/components/Admin/AdminTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreateInspectionModal } from "@/components/Inspection/CreateInspectionModal";
+import { InspectionActions } from "@/components/Inspection/InspectionActions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +23,13 @@ const inspections = [
     scheduledDate: new Date(2025, 4, 19, 10, 0),
     status: "pending" as const,
     type: "pre-delivery",
-    priority: "normal"
+    priority: "normal",
+    description: "Vistoria de pré-entrega para verificação das condições da unidade antes da entrega oficial.",
+    checklist: [
+      { id: "1", name: "Verificação de paredes e pinturas", completed: false },
+      { id: "2", name: "Teste de instalações elétricas", completed: false },
+      { id: "3", name: "Teste de instalações hidráulicas", completed: false }
+    ]
   },
   {
     id: "2",
@@ -32,7 +40,13 @@ const inspections = [
     scheduledDate: new Date(2025, 4, 19, 14, 30),
     status: "progress" as const,
     type: "delivery",
-    priority: "high"
+    priority: "high",
+    description: "Vistoria final e entrega oficial das chaves do imóvel.",
+    checklist: [
+      { id: "1", name: "Verificação final de acabamentos", completed: true },
+      { id: "2", name: "Conferência de documentação", completed: false },
+      { id: "3", name: "Demonstração de funcionamento de equipamentos", completed: false }
+    ]
   },
   {
     id: "3",
@@ -43,7 +57,9 @@ const inspections = [
     scheduledDate: new Date(2025, 4, 18, 9, 0),
     status: "complete" as const,
     type: "maintenance",
-    priority: "normal"
+    priority: "normal",
+    description: "Vistoria de manutenção periódica.",
+    checklist: []
   },
   {
     id: "4",
@@ -54,7 +70,9 @@ const inspections = [
     scheduledDate: new Date(2025, 4, 20, 16, 0),
     status: "pending" as const,
     type: "pre-delivery",
-    priority: "low"
+    priority: "low",
+    description: "Vistoria de pré-entrega agendada conforme cronograma.",
+    checklist: []
   }
 ];
 
@@ -180,24 +198,16 @@ const Inspections = () => {
       render: (value: string) => (
         <div className="font-medium text-slate-700">{value}</div>
       )
-    }
-  ];
-
-  const actions = [
-    {
-      label: "Visualizar",
-      icon: <Eye className="h-4 w-4" />,
-      onClick: (row: any) => console.log("View", row)
     },
     {
-      label: "Editar",
-      icon: <Edit className="h-4 w-4" />,
-      onClick: (row: any) => console.log("Edit", row)
-    },
-    {
-      label: "Reagendar",
-      icon: <Calendar className="h-4 w-4" />,
-      onClick: (row: any) => console.log("Reschedule", row)
+      key: "actions",
+      label: "Ações",
+      render: (value: any, row: any) => (
+        <InspectionActions 
+          inspection={row} 
+          onUpdate={() => console.log("Update inspection", row.id)} 
+        />
+      )
     }
   ];
 
@@ -279,7 +289,6 @@ const Inspections = () => {
       <AdminTable
         columns={columns}
         data={filteredInspections}
-        actions={actions}
         emptyState={{
           icon: <ClipboardCheck className="h-12 w-12 text-slate-400" />,
           title: "Nenhuma vistoria encontrada",

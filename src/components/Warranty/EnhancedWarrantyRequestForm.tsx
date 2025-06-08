@@ -4,16 +4,27 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { v4 as uuidv4 } from 'uuid';
-import { Plus, AlertTriangle } from "lucide-react";
+import { Plus, AlertTriangle, User, Building, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/components/ui/use-toast";
 import { WarrantyProblemItem, WarrantyProblem } from "@/components/Warranty/WarrantyProblemItem";
+import { mockProperties } from "@/services/SharedDataService";
 
 // Form schema with validation
 const formSchema = z.object({
+  client: z.string({
+    required_error: "Selecione um cliente",
+  }),
+  property: z.string({
+    required_error: "Selecione um empreendimento",
+  }),
+  unit: z.string({
+    required_error: "Informe a unidade",
+  }),
   title: z.string().min(5, {
     message: "O título deve ter pelo menos 5 caracteres"
   }).max(100, {
@@ -24,6 +35,13 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const clients = [
+  { id: "1", name: "Maria Oliveira", email: "maria@email.com", phone: "(11) 99999-9999" },
+  { id: "2", name: "João Silva", email: "joao@email.com", phone: "(11) 88888-8888" },
+  { id: "3", name: "Carlos Santos", email: "carlos@email.com", phone: "(11) 77777-7777" },
+  { id: "4", name: "Ana Costa", email: "ana@email.com", phone: "(11) 66666-6666" }
+];
 
 interface EnhancedWarrantyRequestFormProps {
   onSubmit?: (data: FormValues & { problems: WarrantyProblem[] }) => void;
@@ -46,11 +64,17 @@ export function EnhancedWarrantyRequestForm({ onSubmit, onCancel }: EnhancedWarr
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      client: "",
+      property: "",
+      unit: "",
       title: "",
       contactPreference: "any",
       additionalInfo: ""
     },
   });
+  
+  const selectedClient = form.watch("client");
+  const selectedProperty = form.watch("property");
   
   // Handle problem change
   const handleProblemChange = (index: number, field: keyof WarrantyProblem, value: any) => {
@@ -109,10 +133,16 @@ export function EnhancedWarrantyRequestForm({ onSubmit, onCancel }: EnhancedWarr
       return;
     }
     
+    // Find selected client and property data
+    const selectedClientData = clients.find(c => c.id === values.client);
+    const selectedPropertyData = mockProperties.find(p => p.id === values.property);
+    
     // Combine form values with problems
     const completeData = {
       ...values,
-      problems
+      problems,
+      clientData: selectedClientData,
+      propertyData: selectedPropertyData
     };
     
     if (onSubmit) {
@@ -143,6 +173,117 @@ export function EnhancedWarrantyRequestForm({ onSubmit, onCancel }: EnhancedWarr
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {/* Informações do Cliente e Imóvel */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium border-b pb-2">Informações do Cliente e Imóvel</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="client"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Cliente <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um cliente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clients.map(client => (
+                        <SelectItem key={client.id} value={client.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{client.name}</span>
+                            <span className="text-sm text-muted-foreground">{client.email}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="property"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    Empreendimento <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um empreendimento" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {mockProperties.map(property => (
+                        <SelectItem key={property.id} value={property.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{property.name}</span>
+                            <span className="text-sm text-muted-foreground">{property.location}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="unit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Unidade <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: 204, 507, 101A" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="contactPreference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preferência de contato</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Como prefere ser contatado?" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="email">E-mail</SelectItem>
+                      <SelectItem value="phone">Telefone</SelectItem>
+                      <SelectItem value="any">Qualquer um</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
         <FormField
           control={form.control}
           name="title"
@@ -150,7 +291,7 @@ export function EnhancedWarrantyRequestForm({ onSubmit, onCancel }: EnhancedWarr
             <FormItem>
               <FormLabel>Título da solicitação <span className="text-destructive">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="Ex: Problemas em meu apartamento" {...field} />
+                <Input placeholder="Ex: Problemas de infiltração no banheiro" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
