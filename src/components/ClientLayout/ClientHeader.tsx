@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NotificationPanel = () => {
   const notifications = [
@@ -160,7 +161,19 @@ const ChatSupportPanel = () => {
 };
 
 export const ClientHeader = () => {
+  const { user, logout } = useAuth();
   const unreadNotifications = 3;
+
+  const handleLogout = () => {
+    console.log('ClientHeader: Executando logout');
+    logout();
+  };
+
+  // Dados do usuário baseados no contexto de autenticação
+  const userData = user || {
+    name: "Usuário",
+    property: "Propriedade"
+  };
 
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
@@ -213,11 +226,11 @@ export const ClientHeader = () => {
               <Button variant="ghost" className="flex items-center gap-3 hover:bg-muted/50 transition-colors">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
-                    MO
+                    {userData.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium">Maria Oliveira</p>
+                  <p className="text-sm font-medium">{userData.name}</p>
                   <p className="text-xs text-muted-foreground">Edifício Aurora - Un. 204</p>
                 </div>
               </Button>
@@ -232,7 +245,10 @@ export const ClientHeader = () => {
                 Configurações
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600 focus:text-red-600">
+              <DropdownMenuItem 
+                className="text-red-600 focus:text-red-600"
+                onClick={handleLogout}
+              >
                 Sair
               </DropdownMenuItem>
             </DropdownMenuContent>

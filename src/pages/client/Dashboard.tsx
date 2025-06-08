@@ -17,63 +17,115 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  getClientInspections, 
+  getClientWarrantyRequests, 
+  getClientDocuments, 
+  getClientProperty 
+} from "@/services/SharedDataService";
 
 const Dashboard = () => {
-  // Mock data para demonstrar funcionalidades
+  const { user } = useAuth();
+  
+  if (!user) {
+    console.error('Dashboard: Usuário não autenticado');
+    return <div>Erro: Usuário não encontrado</div>;
+  }
+
+  console.log('Dashboard: Carregando dados para:', user.name);
+
+  // Buscar dados específicos do cliente logado
+  const clientInspections = getClientInspections(user.name);
+  const clientWarrantyRequests = getClientWarrantyRequests(user.name);
+  const clientDocuments = getClientDocuments(user.name);
+  const clientProperty = getClientProperty(user.name);
+
+  // Mock data personalizado baseado no usuário
   const userInfo = {
-    name: "Maria Oliveira",
-    property: "Edifício Aurora",
-    unit: "Unidade 204",
+    name: user.name,
+    property: clientProperty?.name || "Propriedade não encontrada",
+    unit: "Unidade 204", // Poderia vir dos dados do usuário
     deliveryDate: new Date(2025, 5, 15),
     contractDate: new Date(2024, 10, 20)
   };
 
-  const recentDocuments = [
-    { id: "1", title: "Contrato de Compra e Venda", date: new Date(2025, 3, 15), status: "disponivel" },
-    { id: "2", title: "Manual do Proprietário", date: new Date(2025, 3, 20), status: "disponivel" },
-    { id: "3", title: "Relatório de Vistoria", date: new Date(2025, 4, 10), status: "disponivel" }
-  ];
+  const recentDocuments = clientDocuments.slice(0, 3).map(doc => ({
+    id: doc.id,
+    title: doc.title,
+    date: doc.uploadDate,
+    status: doc.status
+  }));
 
-  const upcomingInspections = [
-    { id: "1", title: "Vistoria de Pré-entrega", date: new Date(2025, 5, 10), status: "agendada" },
-    { id: "2", title: "Vistoria de Entrega", date: new Date(2025, 5, 15), status: "pendente" }
-  ];
+  const upcomingInspections = clientInspections
+    .filter(i => i.scheduledDate > new Date())
+    .slice(0, 2)
+    .map(inspection => ({
+      id: inspection.id,
+      title: inspection.title,
+      date: inspection.scheduledDate,
+      status: inspection.status
+    }));
 
-  const warrantyRequests = [
-    { id: "1", title: "Reparo na torneira do banheiro", status: "em_andamento", priority: "media" },
-    { id: "2", title: "Ajuste na porta da cozinha", status: "concluido", priority: "baixa" }
-  ];
+  const warrantyRequests = clientWarrantyRequests.slice(0, 2).map(request => ({
+    id: request.id,
+    title: request.title,
+    status: request.status,
+    priority: request.priority
+  }));
 
   const notifications = [
-    { id: "1", title: "Vistoria agendada", message: "Sua vistoria de pré-entrega foi confirmada", urgent: true },
-    { id: "2", title: "Documento disponível", message: "Manual do proprietário já está disponível", urgent: false },
-    { id: "3", title: "Lembrete de pagamento", message: "Próxima parcela vence em 5 dias", urgent: true }
+    { 
+      id: "1", 
+      title: "Vistoria agendada", 
+      message: "Sua vistoria de pré-entrega foi confirmada", 
+      urgent: true 
+    },
+    { 
+      id: "2", 
+      title: "Documento disponível", 
+      message: "Manual do proprietário já está disponível", 
+      urgent: false 
+    },
+    { 
+      id: "3", 
+      title: "Lembrete de pagamento", 
+      message: "Próxima parcela vence em 5 dias", 
+      urgent: true 
+    }
   ];
 
   const getStatusColor = (status: string) => {
     const colors = {
-      disponivel: "default",
-      agendada: "default",
-      pendente: "secondary",
-      em_andamento: "secondary",
-      concluido: "outline"
+      available: "default",
+      pending: "secondary",
+      expired: "destructive",
+      open: "destructive",
+      in_progress: "secondary",
+      resolved: "outline",
+      closed: "outline"
     };
     return colors[status as keyof typeof colors] || "outline";
   };
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      disponivel: "Disponível",
-      agendada: "Agendada",
-      pendente: "Pendente",
-      em_andamento: "Em Andamento",
-      concluido: "Concluído"
+      available: "Disponível",
+      pending: "Pendente",
+      expired: "Expirado",
+      open: "Aberto",
+      in_progress: "Em Andamento",
+      resolved: "Resolvido",
+      closed: "Fechado",
+      complete: "Concluído"
     };
     return labels[status as keyof typeof labels] || status;
   };
 
   const daysToDelivery = Math.ceil((userInfo.deliveryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
   const contractProgress = Math.min(((new Date().getTime() - userInfo.contractDate.getTime()) / (userInfo.deliveryDate.getTime() - userInfo.contractDate.getTime())) * 100, 100);
+
+  console.log('Dashboard: Dados carregados - Vistorias:', clientInspections.length, 'Garantias:', clientWarrantyRequests.length, 'Documentos:', clientDocuments.length);
 
   return (
     <div className="space-y-6">
@@ -127,8 +179,10 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Documentos</p>
-                <p className="text-2xl font-bold">4</p>
-                <p className="text-xs text-muted-foreground">3 disponíveis</p>
+                <p className="text-2xl font-bold">{clientDocuments.length}</p>
+                <p className="text-xs text-muted-foreground">
+                  {clientDocuments.filter(d => d.status === 'available').length} disponíveis
+                </p>
               </div>
               <FileText className="h-8 w-8 text-blue-600" />
             </div>
@@ -139,8 +193,10 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Vistorias</p>
-                <p className="text-2xl font-bold">2</p>
-                <p className="text-xs text-muted-foreground">1 agendada</p>
+                <p className="text-2xl font-bold">{clientInspections.length}</p>
+                <p className="text-xs text-muted-foreground">
+                  {clientInspections.filter(i => i.status === 'pending').length} pendentes
+                </p>
               </div>
               <ClipboardCheck className="h-8 w-8 text-green-600" />
             </div>
@@ -151,8 +207,10 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Garantias</p>
-                <p className="text-2xl font-bold">2</p>
-                <p className="text-xs text-muted-foreground">1 em andamento</p>
+                <p className="text-2xl font-bold">{clientWarrantyRequests.length}</p>
+                <p className="text-xs text-muted-foreground">
+                  {clientWarrantyRequests.filter(w => w.status === 'in_progress').length} em andamento
+                </p>
               </div>
               <ShieldCheck className="h-8 w-8 text-orange-600" />
             </div>
@@ -189,20 +247,24 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {recentDocuments.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">{doc.title}</p>
-                    <p className="text-xs text-muted-foreground">{doc.date.toLocaleDateString()}</p>
+            {recentDocuments.length > 0 ? (
+              recentDocuments.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{doc.title}</p>
+                      <p className="text-xs text-muted-foreground">{doc.date.toLocaleDateString()}</p>
+                    </div>
                   </div>
+                  <Badge variant={getStatusColor(doc.status) as any} className="text-xs">
+                    {getStatusLabel(doc.status)}
+                  </Badge>
                 </div>
-                <Badge variant={getStatusColor(doc.status) as any} className="text-xs">
-                  {getStatusLabel(doc.status)}
-                </Badge>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhum documento encontrado</p>
+            )}
           </CardContent>
         </Card>
 
@@ -222,20 +284,24 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {upcomingInspections.map((inspection) => (
-              <div key={inspection.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">{inspection.title}</p>
-                    <p className="text-xs text-muted-foreground">{inspection.date.toLocaleDateString()}</p>
+            {upcomingInspections.length > 0 ? (
+              upcomingInspections.map((inspection) => (
+                <div key={inspection.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{inspection.title}</p>
+                      <p className="text-xs text-muted-foreground">{inspection.date.toLocaleDateString()}</p>
+                    </div>
                   </div>
+                  <Badge variant={getStatusColor(inspection.status) as any} className="text-xs">
+                    {getStatusLabel(inspection.status)}
+                  </Badge>
                 </div>
-                <Badge variant={getStatusColor(inspection.status) as any} className="text-xs">
-                  {getStatusLabel(inspection.status)}
-                </Badge>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhuma vistoria agendada</p>
+            )}
           </CardContent>
         </Card>
 
@@ -255,20 +321,24 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {warrantyRequests.map((request) => (
-              <div key={request.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">{request.title}</p>
-                    <p className="text-xs text-muted-foreground">Prioridade: {request.priority}</p>
+            {warrantyRequests.length > 0 ? (
+              warrantyRequests.map((request) => (
+                <div key={request.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{request.title}</p>
+                      <p className="text-xs text-muted-foreground">Prioridade: {request.priority}</p>
+                    </div>
                   </div>
+                  <Badge variant={getStatusColor(request.status) as any} className="text-xs">
+                    {getStatusLabel(request.status)}
+                  </Badge>
                 </div>
-                <Badge variant={getStatusColor(request.status) as any} className="text-xs">
-                  {getStatusLabel(request.status)}
-                </Badge>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhuma solicitação de garantia</p>
+            )}
           </CardContent>
         </Card>
 

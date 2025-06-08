@@ -1,3 +1,4 @@
+
 import { Link, NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
@@ -19,12 +20,12 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ChatSupportPanel = () => {
   const [message, setMessage] = useState("");
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  
   const handleSend = () => {
     if (message.trim()) {
       toast({
@@ -33,7 +34,9 @@ const ChatSupportPanel = () => {
       setMessage("");
     }
   };
-  return <div className="w-[380px] h-[500px] flex flex-col">
+  
+  return (
+    <div className="w-[380px] h-[500px] flex flex-col">
       <div className="flex items-center gap-3 p-4 border-b">
         <Avatar className="h-9 w-9">
           <AvatarImage src="/placeholder.svg" alt="Suporte" />
@@ -70,11 +73,17 @@ const ChatSupportPanel = () => {
       
       <div className="p-3 border-t">
         <div className="flex gap-2">
-          <Input value={message} onChange={e => setMessage(e.target.value)} placeholder="Digite sua mensagem..." onKeyPress={e => e.key === 'Enter' && handleSend()} />
+          <Input 
+            value={message} 
+            onChange={e => setMessage(e.target.value)} 
+            placeholder="Digite sua mensagem..." 
+            onKeyPress={e => e.key === 'Enter' && handleSend()} 
+          />
           <Button onClick={handleSend} type="button">Enviar</Button>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 
 const ClientNavLink = ({
@@ -129,6 +138,21 @@ interface ClientSidebarProps {
 }
 
 export const ClientSidebar = ({ isOpen, onClose, onLinkClick }: ClientSidebarProps) => {
+  const { user, logout } = useAuth();
+  
+  const handleLogout = () => {
+    console.log('ClientSidebar: Executando logout');
+    logout();
+    onLinkClick(); // Fecha o sidebar no mobile
+  };
+
+  // Dados do usuário baseados no contexto de autenticação
+  const userData = user || {
+    name: "Usuário",
+    property: "Propriedade",
+    unit: "000"
+  };
+
   return (
     <div className={cn(
       "fixed inset-y-0 left-0 z-50 w-72 bg-background/95 backdrop-blur-sm border-r transform transition-transform duration-300 ease-in-out md:translate-x-0",
@@ -162,11 +186,11 @@ export const ClientSidebar = ({ isOpen, onClose, onLinkClick }: ClientSidebarPro
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12 border-2 border-white shadow-lg">
             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-lg font-semibold">
-              MO
+              {userData.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold text-lg">Maria Oliveira</p>
+            <p className="font-semibold text-lg">{userData.name}</p>
             <p className="text-sm text-muted-foreground">Edifício Aurora</p>
             <p className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded-full inline-block mt-1">
               Unidade 204
@@ -219,16 +243,14 @@ export const ClientSidebar = ({ isOpen, onClose, onLinkClick }: ClientSidebarPro
       
       {/* User controls */}
       <div className="p-4 border-t bg-muted/20">
-        <Link to="/">
-          <Button 
-            variant="outline" 
-            className="w-full gap-3 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors" 
-            onClick={onLinkClick}
-          >
-            <LogOut size={18} />
-            Sair do Portal
-          </Button>
-        </Link>
+        <Button 
+          variant="outline" 
+          className="w-full gap-3 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors" 
+          onClick={handleLogout}
+        >
+          <LogOut size={18} />
+          Sair do Portal
+        </Button>
       </div>
     </div>
   );

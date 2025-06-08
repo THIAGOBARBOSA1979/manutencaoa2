@@ -29,7 +29,7 @@ const mockUsers = [
   },
   {
     id: '2',
-    name: 'Cliente Premium',
+    name: 'Maria Oliveira',
     email: 'cliente@exemplo.com',
     password: '123456',
     role: 'client' as const
@@ -81,16 +81,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (storedUser && sessionExpiry) {
         const now = new Date().getTime();
         if (now < parseInt(sessionExpiry)) {
-          setUser(JSON.parse(storedUser));
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          console.log('AuthContext: Usuário autenticado:', userData);
         } else {
           // Sessão expirada
+          console.log('AuthContext: Sessão expirada');
           localStorage.removeItem('auth_user');
           localStorage.removeItem('session_expiry');
           localStorage.removeItem('rememberMe');
         }
       }
     } catch (error) {
-      console.error('Error checking auth:', error);
+      console.error('AuthContext: Erro ao verificar autenticação:', error);
       localStorage.removeItem('auth_user');
       localStorage.removeItem('session_expiry');
       localStorage.removeItem('rememberMe');
@@ -126,6 +129,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(true);
     
     try {
+      console.log('AuthContext: Tentativa de login:', email);
+      
       // Simular delay de rede
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -159,16 +164,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         localStorage.setItem('rememberMe', 'true');
       }
       
+      console.log('AuthContext: Login bem-sucedido para:', authenticatedUser.name, 'Role:', authenticatedUser.role);
+      
       toast({
         title: "✅ Login realizado com sucesso",
         description: `Bem-vindo, ${authenticatedUser.name}!`,
       });
       
-      // Redirect based on user role
+      // Redirect based on user role with proper route
       const redirectPath = getRedirectPath(authenticatedUser.role);
-      navigate(redirectPath);
+      console.log('AuthContext: Redirecionando para:', redirectPath);
+      
+      // Use setTimeout to ensure navigation happens after state update
+      setTimeout(() => {
+        navigate(redirectPath, { replace: true });
+      }, 100);
       
     } catch (error) {
+      console.error('AuthContext: Erro no login:', error);
       toast({
         title: "❌ Erro ao fazer login",
         description: error instanceof Error ? error.message : "Erro desconhecido",
@@ -192,6 +205,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = () => {
+    console.log('AuthContext: Fazendo logout do usuário:', user?.name);
     setUser(null);
     setLoginAttempts(0);
     localStorage.removeItem('auth_user');
@@ -203,7 +217,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       description: "Você foi desconectado com sucesso.",
     });
     
-    navigate('/');
+    navigate('/', { replace: true });
   };
 
   const value: AuthContextType = {
