@@ -3,38 +3,27 @@ import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Building, MapPin, Home, Plus, Upload, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Building, MapPin, FileText, Camera, Video, Loader2 } from "lucide-react";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
+import { EnhancedForm } from "@/components/ui/enhanced-form";
+import { FormSection } from "@/components/ui/form-section";
+import { FormActions } from "@/components/ui/form-actions";
+import { BaseField, FloatingLabelInput } from "@/components/ui/form-field";
 
-// Enhanced form schema with all requested fields
 const formSchema = z.object({
-  name: z.string().min(3, {
-    message: "O nome deve ter pelo menos 3 caracteres"
-  }),
-  address: z.string().min(5, {
-    message: "O endereço deve ter pelo menos 5 caracteres"
-  }),
-  city: z.string().min(2, {
-    message: "Informe a cidade"
-  }),
-  state: z.string().min(2, {
-    message: "Informe o estado"
-  }),
-  type: z.string({
-    required_error: "Selecione o tipo do empreendimento"
-  }),
-  status: z.string({
-    required_error: "Selecione o status da obra"
-  }),
-  totalUnits: z.number().min(1, {
-    message: "Deve ter pelo menos 1 unidade"
-  }),
+  name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
+  address: z.string().min(5, "O endereço deve ter pelo menos 5 caracteres"),
+  city: z.string().min(2, "Informe a cidade"),
+  state: z.string().min(2, "Informe o estado"),
+  type: z.string({ required_error: "Selecione o tipo do empreendimento" }),
+  status: z.string({ required_error: "Selecione o status da obra" }),
+  totalUnits: z.number().min(1, "Deve ter pelo menos 1 unidade"),
   description: z.string().optional(),
   constructionCompany: z.string().optional(),
   registrationNumber: z.string().optional(),
@@ -46,7 +35,6 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Type options
 const typeOptions = [
   { value: "residential", label: "Residencial" },
   { value: "commercial", label: "Comercial" },
@@ -54,7 +42,6 @@ const typeOptions = [
   { value: "industrial", label: "Industrial" },
 ];
 
-// Status options
 const statusOptions = [
   { value: "launch", label: "Lançamento" },
   { value: "construction", label: "Em Construção" },
@@ -66,13 +53,13 @@ const statusOptions = [
 interface EnhancedPropertyFormProps {
   onSubmit?: (data: FormValues) => void;
   onCancel?: () => void;
+  initialData?: Partial<FormValues>;
 }
 
-export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFormProps) {
+export function EnhancedPropertyForm({ onSubmit, onCancel, initialData }: EnhancedPropertyFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
-  // Initialize form with validation
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -90,10 +77,10 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
       videoUrl: "",
       additionalInfo: "",
       isActive: true,
+      ...initialData,
     },
   });
   
-  // Handle form submission
   const handleSubmit = async (values: FormValues) => {
     setIsLoading(true);
     
@@ -101,7 +88,6 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
       if (onSubmit) {
         await onSubmit(values);
       } else {
-        // Default behavior if no onSubmit is provided
         toast({
           title: "Empreendimento cadastrado",
           description: "O empreendimento foi cadastrado com sucesso.",
@@ -113,7 +99,7 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao cadastrar o empreendimento.",
+        description: "Ocorreu um erro ao salvar o empreendimento.",
         variant: "destructive",
       });
     } finally {
@@ -134,24 +120,38 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
   };
   
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid gap-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Informações Básicas</h3>
-            
+    <EnhancedForm
+      title={initialData ? "Editar Empreendimento" : "Novo Empreendimento"}
+      description="Configure as informações do empreendimento no sistema"
+      variant="minimal"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+          <FormSection
+            title="Informações Básicas"
+            description="Dados principais do empreendimento"
+            icon={<Building className="h-5 w-5" />}
+            variant="card"
+          >
             <FormField
               control={form.control}
               name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do empreendimento <span className="text-destructive">*</span></FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Residencial Vista Verde" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Nome do empreendimento"
+                  required
+                  error={fieldState.error?.message}
+                  success={!fieldState.error && field.value?.length > 2}
+                >
+                  <FloatingLabelInput
+                    {...field}
+                    label="Nome do empreendimento"
+                    placeholder="Ex: Residencial Vista Verde"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && field.value?.length > 2}
+                  />
+                </BaseField>
               )}
             />
             
@@ -159,15 +159,17 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
               <FormField
                 control={form.control}
                 name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo <span className="text-destructive">*</span></FormLabel>
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Tipo"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && !!field.value}
+                  >
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                      </FormControl>
+                      <SelectTrigger className={fieldState.error ? "border-destructive" : ""}>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
                       <SelectContent>
                         {typeOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>
@@ -176,23 +178,24 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
+                  </BaseField>
                 )}
               />
               
               <FormField
                 control={form.control}
                 name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status da obra <span className="text-destructive">*</span></FormLabel>
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Status da obra"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && !!field.value}
+                  >
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
-                      </FormControl>
+                      <SelectTrigger className={fieldState.error ? "border-destructive" : ""}>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
                       <SelectContent>
                         {statusOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>
@@ -201,8 +204,7 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
+                  </BaseField>
                 )}
               />
             </div>
@@ -210,38 +212,51 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
             <FormField
               control={form.control}
               name="totalUnits"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número de unidades <span className="text-destructive">*</span></FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min={1} 
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Número de unidades"
+                  required
+                  error={fieldState.error?.message}
+                  success={!fieldState.error && field.value > 0}
+                  hint="Total de unidades no empreendimento"
+                >
+                  <Input 
+                    type="number" 
+                    min={1} 
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    className={fieldState.error ? "border-destructive" : ""}
+                  />
+                </BaseField>
               )}
             />
-          </div>
+          </FormSection>
 
-          {/* Location */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Localização</h3>
-            
+          <FormSection
+            title="Localização"
+            description="Endereço e localização do empreendimento"
+            icon={<MapPin className="h-5 w-5" />}
+            variant="card"
+          >
             <FormField
               control={form.control}
               name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço completo <span className="text-destructive">*</span></FormLabel>
-                  <FormControl>
-                    <Input placeholder="Rua, número, bairro, CEP" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Endereço completo"
+                  required
+                  error={fieldState.error?.message}
+                  success={!fieldState.error && field.value?.length > 4}
+                >
+                  <FloatingLabelInput
+                    {...field}
+                    label="Endereço completo"
+                    placeholder="Rua, número, bairro, CEP"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && field.value?.length > 4}
+                  />
+                </BaseField>
               )}
             />
             
@@ -249,52 +264,71 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
               <FormField
                 control={form.control}
                 name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cidade <span className="text-destructive">*</span></FormLabel>
-                    <FormControl>
-                      <Input placeholder="Cidade" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Cidade"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && field.value?.length > 1}
+                  >
+                    <FloatingLabelInput
+                      {...field}
+                      label="Cidade"
+                      placeholder="Cidade"
+                      required
+                      error={fieldState.error?.message}
+                      success={!fieldState.error && field.value?.length > 1}
+                    />
+                  </BaseField>
                 )}
               />
               
               <FormField
                 control={form.control}
                 name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado <span className="text-destructive">*</span></FormLabel>
-                    <FormControl>
-                      <Input placeholder="Estado" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Estado"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && field.value?.length > 1}
+                  >
+                    <FloatingLabelInput
+                      {...field}
+                      label="Estado"
+                      placeholder="Estado"
+                      required
+                      error={fieldState.error?.message}
+                      success={!fieldState.error && field.value?.length > 1}
+                    />
+                  </BaseField>
                 )}
               />
             </div>
-          </div>
+          </FormSection>
 
-          {/* Description and Additional Info */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Descrição e Informações</h3>
-            
+          <FormSection
+            title="Informações Adicionais"
+            description="Dados complementares e documentação"
+            icon={<FileText className="h-5 w-5" />}
+            variant="card"
+          >
             <FormField
               control={form.control}
               name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Descrição detalhada do empreendimento"
-                      rows={4}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Descrição"
+                  error={fieldState.error?.message}
+                  hint="Descrição detalhada do empreendimento"
+                >
+                  <Textarea 
+                    {...field}
+                    placeholder="Descrição detalhada do empreendimento, características, diferenciais..."
+                    rows={4}
+                    className={fieldState.error ? "border-destructive" : ""}
+                  />
+                </BaseField>
               )}
             />
 
@@ -302,156 +336,161 @@ export function EnhancedPropertyForm({ onSubmit, onCancel }: EnhancedPropertyFor
               <FormField
                 control={form.control}
                 name="constructionCompany"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Construtora</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome da construtora" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Construtora"
+                    error={fieldState.error?.message}
+                  >
+                    <FloatingLabelInput
+                      {...field}
+                      label="Construtora"
+                      placeholder="Nome da construtora responsável"
+                      error={fieldState.error?.message}
+                    />
+                  </BaseField>
                 )}
               />
               
               <FormField
                 control={form.control}
                 name="registrationNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Número do registro</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: RGI 123456" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Número do registro"
+                    error={fieldState.error?.message}
+                    hint="Registro no cartório ou órgão competente"
+                  >
+                    <FloatingLabelInput
+                      {...field}
+                      label="Número do registro"
+                      placeholder="Ex: RGI 123456"
+                      error={fieldState.error?.message}
+                    />
+                  </BaseField>
                 )}
               />
             </div>
+          </FormSection>
 
-            <FormField
-              control={form.control}
-              name="additionalInfo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Informações adicionais</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Plantas, diferenciais, facilidades, etc."
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Media and Documents */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Mídias e Documentos</h3>
-            
+          <FormSection
+            title="Mídias e Documentos"
+            description="Galeria de imagens e documentos do empreendimento"
+            icon={<Camera className="h-5 w-5" />}
+            variant="card"
+          >
             <div>
-              <FormLabel>Galeria de imagens</FormLabel>
-              <div className="mt-2">
+              <BaseField
+                label="Galeria de imagens"
+                hint="Selecione múltiplas imagens do empreendimento"
+              >
                 <Input
                   type="file"
                   multiple
                   accept="image/*"
                   onChange={handleImageUpload}
-                  className="mb-2"
                 />
-                {selectedImages.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {selectedImages.map((file, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-20 object-cover rounded"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0"
-                          onClick={() => removeImage(index)}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              </BaseField>
+              
+              {selectedImages.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+                  {selectedImages.map((file, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-20 object-cover rounded border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeImage(index)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <FormField
               control={form.control}
               name="videoUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Vídeo (URL do YouTube, Vimeo, etc.)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://www.youtube.com/watch?v=..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Vídeo promocional"
+                  error={fieldState.error?.message}
+                  hint="URL do vídeo no YouTube, Vimeo ou similar"
+                >
+                  <FloatingLabelInput
+                    {...field}
+                    label="URL do vídeo"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    error={fieldState.error?.message}
+                  />
+                </BaseField>
               )}
             />
 
             <FormField
               control={form.control}
               name="priceTable"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tabela de preços (URL ou link)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Link para tabela de preços ou documento" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Tabela de preços"
+                  error={fieldState.error?.message}
+                  hint="Link para tabela de preços ou documento"
+                >
+                  <FloatingLabelInput
+                    {...field}
+                    label="Tabela de preços"
+                    placeholder="Link para tabela de preços ou documento"
+                    error={fieldState.error?.message}
+                  />
+                </BaseField>
               )}
             />
-          </div>
+          </FormSection>
 
-          {/* Status */}
-          <FormField
-            control={form.control}
-            name="isActive"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    Empreendimento ativo
-                  </FormLabel>
-                  <div className="text-sm text-muted-foreground">
-                    Define se o empreendimento está visível no sistema
+          <FormSection
+            title="Configurações"
+            description="Status e configurações do empreendimento"
+            variant="minimal"
+          >
+            <FormField
+              control={form.control}
+              name="isActive"
+              render={({ field }) => (
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-0.5">
+                    <div className="text-base font-medium">
+                      Empreendimento ativo
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Define se o empreendimento está visível e ativo no sistema
+                    </div>
                   </div>
-                </div>
-                <FormControl>
                   <Switch
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                </FormControl>
-              </FormItem>
-            )}
+                </div>
+              )}
+            />
+          </FormSection>
+          
+          <FormActions
+            onCancel={onCancel}
+            submitText={initialData ? "Atualizar Empreendimento" : "Cadastrar Empreendimento"}
+            cancelText="Cancelar"
+            loading={isLoading}
+            disabled={!form.formState.isValid}
+            variant="floating"
           />
-        </div>
-        
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-          )}
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Cadastrar Empreendimento
-          </Button>
-        </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+    </EnhancedForm>
   );
 }
