@@ -29,9 +29,26 @@ export function ScheduleInspectionDialog({
 }: ScheduleInspectionDialogProps) {
   const [open, setOpen] = React.useState(false);
   
-  const handleSuccess = () => {
+  const handleSubmit = (data: any) => {
+    console.log("Nova vistoria agendada", data);
     setOpen(false);
   };
+
+  const handleCancel = () => {
+    setOpen(false);
+  };
+
+  // Preparar dados iniciais se houver informações de propriedade
+  const initialData = propertyInfo ? {
+    property: propertyInfo.property,
+    unit: propertyInfo.unit,
+    type: "delivery" as const,
+    inspector: "",
+    date: "",
+    time: "09:00",
+    priority: "medium" as const,
+    observations: `Vistoria para o cliente: ${propertyInfo.client}`,
+  } : undefined;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -53,9 +70,9 @@ export function ScheduleInspectionDialog({
         
         <div className="py-4">
           <ScheduleInspectionForm 
-            onSuccess={handleSuccess} 
-            clientId={clientId}
-            propertyInfo={propertyInfo}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            initialData={initialData}
           />
         </div>
       </DialogContent>

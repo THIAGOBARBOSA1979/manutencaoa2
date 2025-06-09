@@ -11,12 +11,28 @@ interface EditInspectionModalProps {
 }
 
 export function EditInspectionModal({ open, onOpenChange, inspection, onUpdate }: EditInspectionModalProps) {
-  const handleSuccess = () => {
-    console.log("Vistoria editada com sucesso");
+  const handleSubmit = (data: any) => {
+    console.log("Vistoria editada com sucesso", data);
     if (onUpdate) {
       onUpdate();
     }
     onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
+
+  // Preparar dados iniciais baseados na vistoria existente
+  const initialData = {
+    property: inspection?.property || "",
+    unit: inspection?.unit || "",
+    type: inspection?.type || "delivery",
+    inspector: inspection?.inspector || "",
+    date: inspection?.date || "",
+    time: inspection?.time || "09:00",
+    priority: inspection?.priority || "medium",
+    observations: inspection?.observations || "",
   };
 
   return (
@@ -34,12 +50,9 @@ export function EditInspectionModal({ open, onOpenChange, inspection, onUpdate }
         
         <div className="mt-6">
           <ScheduleInspectionForm 
-            onSuccess={handleSuccess}
-            propertyInfo={{
-              property: inspection.property,
-              unit: inspection.unit,
-              client: inspection.client
-            }}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            initialData={initialData}
           />
         </div>
       </DialogContent>
