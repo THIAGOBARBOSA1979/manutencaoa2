@@ -1,12 +1,10 @@
-
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ChecklistItem } from "@/services/ChecklistService";
-import { Plus, FileText, Copy, Edit, Trash, Search, Star } from "lucide-react";
+import { Plus, Search, FileText } from "lucide-react";
+import { ChecklistTemplateCard } from "./ChecklistTemplateCard";
 
 interface ChecklistTemplate {
   id: string;
@@ -158,67 +156,13 @@ export function ChecklistTemplates({ onSelectTemplate, onCreateNew }: ChecklistT
       {/* Grid de templates */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredTemplates.map((template) => (
-          <Card key={template.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    {template.name}
-                    {template.isDefault && (
-                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                    )}
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {template.description}
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Itens:</span>
-                  <Badge variant="secondary">{template.itemCount}</Badge>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Categoria:</span>
-                  <Badge variant="outline">{template.category}</Badge>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Criado:</span>
-                  <span>{template.createdAt.toLocaleDateString()}</span>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <Button 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => onSelectTemplate(template)}
-                  >
-                    Usar Template
-                  </Button>
-                  
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleDuplicateTemplate(template)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  
-                  {!template.isDefault && (
-                    <Button size="sm" variant="outline">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ChecklistTemplateCard
+            key={template.id}
+            template={template}
+            onSelect={() => onSelectTemplate(template)}
+            onDuplicate={() => handleDuplicateTemplate(template)}
+            onEdit={() => console.log("Edit template:", template.id)}
+          />
         ))}
       </div>
 
