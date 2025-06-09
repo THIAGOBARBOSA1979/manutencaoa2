@@ -1,39 +1,24 @@
 
 import React, { useState } from "react";
-import { format } from "date-fns";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, X, Upload, Clock, ShieldCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useForm } from "react-hook-form";
+import { toast } from "@/components/ui/use-toast";
+import { User, Calendar, Clock, FileText, Upload, ShieldCheck } from "lucide-react";
+import { EnhancedForm } from "@/components/ui/enhanced-form";
+import { FormSection } from "@/components/ui/form-section";
+import { FormActions } from "@/components/ui/form-actions";
+import { BaseField, FloatingLabelInput } from "@/components/ui/form-field";
 
 interface WarrantyServiceProps {
   open: boolean;
@@ -42,22 +27,24 @@ interface WarrantyServiceProps {
   warrantyTitle: string;
 }
 
-interface ServiceFormValues {
-  technician: string;
-  date: Date | undefined;
-  time: string;
-  description: string;
-  materials: string;
-  status: string;
-  finalObservation?: string;
-}
+const formSchema = z.object({
+  technician: z.string({ required_error: "Selecione um técnico" }),
+  date: z.string({ required_error: "Selecione uma data" }),
+  time: z.string({ required_error: "Selecione um horário" }),
+  description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres"),
+  materials: z.string().optional(),
+  status: z.enum(["in_progress", "pending", "rescheduled", "completed"]),
+  finalObservation: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 // Mock data for technicians
 const technicians = [
-  { id: "1", name: "João Silva" },
-  { id: "2", name: "Maria Oliveira" },
-  { id: "3", name: "Carlos Santos" },
-  { id: "4", name: "Ana Pereira" },
+  { id: "1", name: "João Silva", specialty: "Hidráulica" },
+  { id: "2", name: "Maria Oliveira", specialty: "Elétrica" },
+  { id: "3", name: "Carlos Santos", specialty: "Estrutural" },
+  { id: "4", name: "Ana Pereira", specialty: "Acabamentos" },
 ];
 
 const WarrantyService: React.FC<WarrantyServiceProps> = ({
@@ -66,15 +53,14 @@ const WarrantyService: React.FC<WarrantyServiceProps> = ({
   warrantyId,
   warrantyTitle,
 }) => {
-  const { toast } = useToast();
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // React Hook Form setup
-  const form = useForm<ServiceFormValues>({
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       technician: "",
-      date: new Date(),
+      date: "",
       time: "09:00",
       description: "",
       materials: "",
@@ -96,11 +82,10 @@ const WarrantyService: React.FC<WarrantyServiceProps> = ({
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const onSubmit = (data: ServiceFormValues) => {
+  const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
       console.log("Form data:", data);
       console.log("Files:", files);
 
@@ -115,269 +100,232 @@ const WarrantyService: React.FC<WarrantyServiceProps> = ({
           : "O atendimento da garantia foi iniciado.",
       });
 
-      setIsSubmitting(false);
       onOpenChange(false);
-    }, 1000);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao registrar o atendimento.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    form.reset();
+    setFiles([]);
+    onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Atender Solicitação de Garantia</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5" />
+            Atender Solicitação de Garantia
+          </DialogTitle>
           <DialogDescription>
             {warrantyTitle} (#{warrantyId})
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="technician"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Técnico Responsável</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um técnico" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {technicians.map((tech) => (
-                        <SelectItem key={tech.id} value={tech.id}>
-                          {tech.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <div className="mt-6">
+          <EnhancedForm variant="minimal">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <FormSection
+                  title="Responsável pelo Atendimento"
+                  description="Defina o técnico responsável pelo atendimento"
+                  icon={<User className="h-5 w-5" />}
+                  variant="card"
+                >
+                  <FormField
+                    control={form.control}
+                    name="technician"
+                    render={({ field, fieldState }) => (
+                      <BaseField
+                        label="Técnico Responsável"
+                        required
+                        error={fieldState.error?.message}
+                        success={!fieldState.error && !!field.value}
+                      >
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger className={fieldState.error ? "border-destructive" : ""}>
+                            <SelectValue placeholder="Selecione um técnico" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {technicians.map((tech) => (
+                              <SelectItem key={tech.id} value={tech.id}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{tech.name}</span>
+                                  <span className="text-xs text-muted-foreground">Especialidade: {tech.specialty}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </BaseField>
+                    )}
+                  />
+                </FormSection>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data do Atendimento</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date < new Date(new Date().setHours(0, 0, 0, 0))
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Horário</FormLabel>
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          type="time"
-                          {...field}
-                          className="pl-8"
-                        />
-                      </FormControl>
-                      <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição do Atendimento</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Descreva as ações realizadas durante o atendimento..."
-                      className="min-h-24"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="materials"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Materiais Utilizados</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Liste os materiais utilizados (opcional)"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-2">
-              <FormLabel>Evidências (Fotos/Documentos)</FormLabel>
-              <div className="border rounded-md p-3">
-                <div className="space-y-2">
-                  {files.length > 0 && (
-                    <div className="space-y-2 mb-4">
-                      {files.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-2 bg-muted rounded-md"
+                <FormSection
+                  title="Agendamento"
+                  description="Data e horário do atendimento"
+                  icon={<Calendar className="h-5 w-5" />}
+                  variant="card"
+                >
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field, fieldState }) => (
+                        <BaseField
+                          label="Data do Atendimento"
+                          required
+                          error={fieldState.error?.message}
+                          success={!fieldState.error && !!field.value}
                         >
-                          <div className="text-sm truncate max-w-xs">
-                            {file.name}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFile(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-center relative">
-                    <Input
-                      type="file"
-                      id="files"
-                      className="opacity-0 absolute inset-0 z-10 cursor-pointer"
-                      multiple
-                      onChange={handleFilesChange}
-                      accept="image/*,.pdf,.doc,.docx"
+                          <FloatingLabelInput
+                            {...field}
+                            type="date"
+                            label="Data do Atendimento"
+                            required
+                            error={fieldState.error?.message}
+                            success={!fieldState.error && !!field.value}
+                          />
+                        </BaseField>
+                      )}
                     />
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      type="button"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Selecionar Arquivos
-                    </Button>
+
+                    <FormField
+                      control={form.control}
+                      name="time"
+                      render={({ field, fieldState }) => (
+                        <BaseField
+                          label="Horário"
+                          required
+                          error={fieldState.error?.message}
+                          success={!fieldState.error && !!field.value}
+                        >
+                          <FloatingLabelInput
+                            {...field}
+                            type="time"
+                            label="Horário"
+                            required
+                            error={fieldState.error?.message}
+                            success={!fieldState.error && !!field.value}
+                          />
+                        </BaseField>
+                      )}
+                    />
                   </div>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Formatos aceitos: JPG, PNG, PDF, DOC (máximo 5MB por arquivo)
-              </p>
-            </div>
+                </FormSection>
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status do Atendimento</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="in_progress">Em Andamento</SelectItem>
-                      <SelectItem value="pending">Pendente de Peças/Materiais</SelectItem>
-                      <SelectItem value="rescheduled">Reagendado</SelectItem>
-                      <SelectItem value="completed">Concluído</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormSection
+                  title="Detalhes do Atendimento"
+                  description="Informações sobre o serviço realizado"
+                  icon={<FileText className="h-5 w-5" />}
+                  variant="card"
+                >
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field, fieldState }) => (
+                      <BaseField
+                        label="Descrição do Atendimento"
+                        required
+                        error={fieldState.error?.message}
+                        success={!fieldState.error && field.value?.length >= 10}
+                        hint="Descreva as ações realizadas durante o atendimento"
+                      >
+                        <Textarea
+                          {...field}
+                          placeholder="Descreva as ações realizadas durante o atendimento..."
+                          className="min-h-[100px] resize-y"
+                        />
+                      </BaseField>
+                    )}
+                  />
 
-            {status === "completed" && (
-              <FormField
-                control={form.control}
-                name="finalObservation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observações Finais</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Descreva as observações finais do atendimento..."
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                  <FormField
+                    control={form.control}
+                    name="materials"
+                    render={({ field, fieldState }) => (
+                      <BaseField
+                        label="Materiais Utilizados"
+                        error={fieldState.error?.message}
+                        hint="Liste os materiais utilizados (opcional)"
+                      >
+                        <Textarea
+                          {...field}
+                          placeholder="Liste os materiais utilizados (opcional)"
+                          className="min-h-[80px] resize-y"
+                        />
+                      </BaseField>
+                    )}
+                  />
 
-            <DialogFooter className="pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="gap-2"
-              >
-                <ShieldCheck className="h-4 w-4" />
-                {status === "completed"
-                  ? "Finalizar Atendimento"
-                  : "Registrar Atendimento"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field, fieldState }) => (
+                      <BaseField
+                        label="Status do Atendimento"
+                        required
+                        error={fieldState.error?.message}
+                        success={!fieldState.error && !!field.value}
+                      >
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="in_progress">Em Andamento</SelectItem>
+                            <SelectItem value="pending">Pendente de Peças/Materiais</SelectItem>
+                            <SelectItem value="rescheduled">Reagendado</SelectItem>
+                            <SelectItem value="completed">Concluído</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </BaseField>
+                    )}
+                  />
+
+                  {status === "completed" && (
+                    <FormField
+                      control={form.control}
+                      name="finalObservation"
+                      render={({ field, fieldState }) => (
+                        <BaseField
+                          label="Observações Finais"
+                          error={fieldState.error?.message}
+                          hint="Descreva as observações finais do atendimento"
+                        >
+                          <Textarea
+                            {...field}
+                            placeholder="Descreva as observações finais do atendimento..."
+                            className="min-h-[80px] resize-y"
+                          />
+                        </BaseField>
+                      )}
+                    />
+                  )}
+                </FormSection>
+
+                <FormActions
+                  onCancel={handleCancel}
+                  submitText={status === "completed" ? "Finalizar Atendimento" : "Registrar Atendimento"}
+                  cancelText="Cancelar"
+                  loading={isSubmitting}
+                  disabled={!form.formState.isValid}
+                  variant="floating"
+                />
+              </form>
+            </Form>
+          </EnhancedForm>
+        </div>
       </DialogContent>
     </Dialog>
   );
