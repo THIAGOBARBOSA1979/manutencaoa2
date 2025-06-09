@@ -1,164 +1,269 @@
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { User, Shield, Mail, Phone } from "lucide-react";
+import { Form, FormField } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/use-toast";
+import { EnhancedForm } from "@/components/ui/enhanced-form";
+import { FormSection } from "@/components/ui/form-section";
+import { FormActions } from "@/components/ui/form-actions";
+import { BaseField, FloatingLabelInput } from "@/components/ui/form-field";
+import { MaskedInput, PasswordInput } from "@/components/ui/enhanced-input";
+
+const formSchema = z.object({
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
+  role: z.enum(["admin", "inspector", "manager", "client"]),
+  password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
+  confirmPassword: z.string(),
+  isActive: z.boolean().default(true),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+const roleOptions = [
+  { value: "admin", label: "Administrador" },
+  { value: "manager", label: "Gerente" },
+  { value: "inspector", label: "Vistoriador" },
+  { value: "client", label: "Cliente" },
+];
 
 interface UserFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (userData: any) => void;
-  editingUser?: any;
+  onSubmit?: (data: FormValues) => void;
+  onCancel?: () => void;
+  initialData?: Partial<FormValues>;
+  isEditing?: boolean;
 }
 
-export const UserForm = ({ isOpen, onClose, onSave, editingUser }: UserFormProps) => {
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: editingUser?.name || "",
-    email: editingUser?.email || "",
-    phone: editingUser?.phone || "",
-    role: editingUser?.role || "client",
-    property: editingUser?.property || "",
-    unit: editingUser?.unit || "",
-    notes: editingUser?.notes || "",
+export function UserForm({ onSubmit, onCancel, initialData, isEditing = false }: UserFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: initialData?.name || "",
+      email: initialData?.email || "",
+      phone: initialData?.phone || "",
+      role: initialData?.role || "client",
+      password: "",
+      confirmPassword: "",
+      isActive: initialData?.isActive ?? true,
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: FormValues) => {
+    setIsSubmitting(true);
     
-    if (!formData.name || !formData.email) {
+    try {
+      if (onSubmit) {
+        onSubmit(values);
+      } else {
+        toast({
+          title: isEditing ? "Usuário atualizado" : "Usuário criado",
+          description: isEditing 
+            ? "Usuário atualizado com sucesso!"
+            : "Novo usuário criado com sucesso!",
+        });
+        
+        if (!isEditing) {
+          form.reset();
+        }
+      }
+    } catch (error) {
       toast({
         title: "Erro",
-        description: "Nome e email são obrigatórios.",
+        description: "Ocorreu um erro ao salvar o usuário.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onSave(formData);
-    onClose();
-    toast({
-      title: "Sucesso",
-      description: editingUser ? "Usuário atualizado com sucesso!" : "Usuário criado com sucesso!",
-    });
-  };
-
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{editingUser ? "Editar Usuário" : "Novo Usuário"}</DialogTitle>
-          <DialogDescription>
-            {editingUser ? "Atualize as informações do usuário." : "Adicione um novo usuário ao sistema."}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                placeholder="Nome completo"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                placeholder="email@exemplo.com"
-                required
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="role">Função</Label>
-              <Select value={formData.role} onValueChange={(value) => handleChange("role", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a função" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="manager">Gerente</SelectItem>
-                  <SelectItem value="technical">Técnico</SelectItem>
-                  <SelectItem value="client">Cliente</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          {formData.role === "client" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="property">Empreendimento</Label>
-                <Input
-                  id="property"
-                  value={formData.property}
-                  onChange={(e) => handleChange("property", e.target.value)}
-                  placeholder="Nome do empreendimento"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="unit">Unidade</Label>
-                <Input
-                  id="unit"
-                  value={formData.unit}
-                  onChange={(e) => handleChange("unit", e.target.value)}
-                  placeholder="Número da unidade"
-                />
-              </div>
-            </div>
-          )}
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleChange("notes", e.target.value)}
-              placeholder="Observações adicionais sobre o usuário"
-              rows={3}
+    <EnhancedForm
+      title={isEditing ? "Editar Usuário" : "Novo Usuário"}
+      description={isEditing 
+        ? "Atualize as informações do usuário"
+        : "Cadastre um novo usuário no sistema"
+      }
+      variant="minimal"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+          <FormSection
+            title="Informações Pessoais"
+            description="Dados básicos do usuário"
+            icon={<User className="h-5 w-5" />}
+            variant="card"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Nome completo"
+                  required
+                  error={fieldState.error?.message}
+                  success={!fieldState.error && !!field.value}
+                >
+                  <FloatingLabelInput
+                    {...field}
+                    label="Nome completo"
+                    placeholder="Digite o nome completo"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && !!field.value}
+                  />
+                </BaseField>
+              )}
             />
-          </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="E-mail"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && !!field.value}
+                    hint="Será usado para login no sistema"
+                  >
+                    <FloatingLabelInput
+                      {...field}
+                      type="email"
+                      label="E-mail"
+                      placeholder="usuario@email.com"
+                      required
+                      error={fieldState.error?.message}
+                      success={!fieldState.error && !!field.value}
+                    />
+                  </BaseField>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Telefone"
+                    required
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && !!field.value}
+                  >
+                    <MaskedInput
+                      {...field}
+                      mask="phone"
+                      placeholder="(11) 99999-9999"
+                      className={`transition-all duration-200 ${
+                        fieldState.error ? "border-destructive" : ""
+                      } ${!fieldState.error && field.value ? "border-emerald-500" : ""}`}
+                    />
+                  </BaseField>
+                )}
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Permissões e Acesso"
+            description="Defina o nível de acesso do usuário"
+            icon={<Shield className="h-5 w-5" />}
+            variant="card"
+          >
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field, fieldState }) => (
+                <BaseField
+                  label="Perfil de usuário"
+                  required
+                  error={fieldState.error?.message}
+                  success={!fieldState.error && !!field.value}
+                  hint="Define as permissões do usuário no sistema"
+                >
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger className={fieldState.error ? "border-destructive" : ""}>
+                      <SelectValue placeholder="Selecione o perfil" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roleOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </BaseField>
+              )}
+            />
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label={isEditing ? "Nova senha (opcional)" : "Senha"}
+                    required={!isEditing}
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && field.value?.length >= 8}
+                    hint={isEditing ? "Deixe em branco para manter a senha atual" : "Mínimo de 8 caracteres"}
+                  >
+                    <PasswordInput
+                      {...field}
+                      placeholder={isEditing ? "Nova senha (opcional)" : "Digite a senha"}
+                      className={`transition-all duration-200 ${
+                        fieldState.error ? "border-destructive" : ""
+                      } ${!fieldState.error && field.value?.length >= 8 ? "border-emerald-500" : ""}`}
+                    />
+                  </BaseField>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field, fieldState }) => (
+                  <BaseField
+                    label="Confirmar senha"
+                    required={!isEditing}
+                    error={fieldState.error?.message}
+                    success={!fieldState.error && field.value === form.watch("password") && !!field.value}
+                  >
+                    <PasswordInput
+                      {...field}
+                      placeholder="Confirme a senha"
+                      className={`transition-all duration-200 ${
+                        fieldState.error ? "border-destructive" : ""
+                      } ${!fieldState.error && field.value === form.watch("password") && !!field.value ? "border-emerald-500" : ""}`}
+                    />
+                  </BaseField>
+                )}
+              />
+            </div>
+          </FormSection>
+
+          <FormActions
+            onCancel={onCancel}
+            submitText={isEditing ? "Atualizar Usuário" : "Criar Usuário"}
+            cancelText="Cancelar"
+            loading={isSubmitting}
+            disabled={!form.formState.isValid}
+            variant="floating"
+          />
         </form>
-        
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" onClick={handleSubmit}>
-            {editingUser ? "Atualizar" : "Criar"} Usuário
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </Form>
+    </EnhancedForm>
   );
-};
+}
