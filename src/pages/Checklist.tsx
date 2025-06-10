@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -76,12 +75,21 @@ export default function Checklist() {
     }
   };
 
-  const handleSaveExecution = (completedItems: ChecklistItem[], notes: string) => {
-    console.log('Salvando execução:', { completedItems, notes });
+  const handleItemStatusChange = (itemId: string, status: 'completed' | 'failed' | 'not_applicable' | 'pending') => {
+    setExecutionItems(prev => prev.map(item => 
+      item.id === itemId ? { ...item, status, completedAt: status === 'completed' ? new Date() : undefined } : item
+    ));
   };
 
-  const handleSubmitExecution = (completedItems: ChecklistItem[], notes: string) => {
-    console.log('Finalizando execução:', { completedItems, notes });
+  const handleItemNotesChange = (itemId: string, notes: string) => {
+    setExecutionItems(prev => prev.map(item => 
+      item.id === itemId ? { ...item, notes } : item
+    ));
+  };
+
+  const handleSaveExecution = () => {
+    const completedItems = executionItems.filter(item => item.status === 'completed');
+    console.log('Salvando execução:', { completedItems, totalItems: executionItems.length });
     setCurrentView('templates');
   };
 
@@ -109,16 +117,14 @@ export default function Checklist() {
   if (currentView === 'execution' && selectedTemplate) {
     return (
       <div className="container mx-auto py-6">
-        <div className="mb-4">
-          <Button variant="outline" onClick={handleBack}>
-            ← Voltar aos Templates
-          </Button>
-        </div>
         <ChecklistExecution
           title={selectedTemplate.name}
+          description={selectedTemplate.description}
           items={executionItems}
+          onItemStatusChange={handleItemStatusChange}
+          onItemNotesChange={handleItemNotesChange}
           onSave={handleSaveExecution}
-          onSubmit={handleSubmitExecution}
+          onBack={handleBack}
         />
       </div>
     );

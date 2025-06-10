@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +80,14 @@ export default function Warranty() {
   const [executions, setExecutions] = useState<ServiceExecution[]>([]);
 
   const selectedWarranty = warranties.find(w => w.id === selectedWarrantyId);
+
+  // Calculate stats from warranties
+  const stats = {
+    critical: warranties.filter(w => w.priority === 'critical').length,
+    pending: warranties.filter(w => w.status === 'pending').length,
+    progress: warranties.filter(w => w.status === 'progress').length,
+    complete: warranties.filter(w => w.status === 'resolved').length,
+  };
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -166,7 +173,7 @@ export default function Warranty() {
         </Button>
       </div>
 
-      <WarrantyStats warranties={warranties} />
+      <WarrantyStats stats={stats} />
 
       {/* Filtros e Busca */}
       <Card>
