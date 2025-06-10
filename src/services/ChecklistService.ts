@@ -3,14 +3,18 @@ import { SyncService } from './SyncService';
 
 export interface ChecklistItem {
   id: string;
-  description: string;
+  text: string;
+  description?: string;
   required: boolean;
+  isRequired: boolean;
   conditional?: {
     dependsOn: string;
     value: boolean;
   };
   evidence?: File[] | null;
-  status?: 'ok' | 'issue' | 'na'; // Added status property
+  status: 'pending' | 'completed' | 'failed' | 'not_applicable';
+  notes?: string;
+  completedAt?: Date;
 }
 
 export interface ChecklistTemplate {
