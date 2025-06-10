@@ -1,78 +1,111 @@
 
-import { SyncService } from './SyncService';
-
 export interface ChecklistItem {
   id: string;
   text: string;
   description?: string;
   required: boolean;
   isRequired: boolean;
-  conditional?: {
-    dependsOn: string;
-    value: boolean;
-  };
-  evidence?: File[] | null;
   status: 'pending' | 'completed' | 'failed' | 'not_applicable';
   notes?: string;
+  evidence?: string[];
   completedAt?: Date;
 }
 
 export interface ChecklistTemplate {
-  id?: string;
-  title: string;
+  id: string;
+  name: string;
   description: string;
+  category: string;
   items: ChecklistItem[];
-  createdAt?: Date;
-  lastUpdated?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export class ChecklistService {
-  static async createChecklist(items: ChecklistItem[], templateData: { title: string; description: string }) {
-    const checklistData = {
-      title: templateData.title,
-      description: templateData.description,
-      items,
-      timestamp: new Date().toISOString(),
-      hash: await this.generateHash(items),
-      status: 'active'
+export interface ChecklistExecution {
+  id: string;
+  templateId: string;
+  templateName: string;
+  executedBy: string;
+  startedAt: Date;
+  completedAt?: Date;
+  items: ChecklistItem[];
+  photos: string[];
+  notes: string;
+}
+
+class ChecklistService {
+  private templates: ChecklistTemplate[] = [];
+  private executions: ChecklistExecution[] = [];
+
+  // Create a new checklist template
+  async createChecklist(
+    items: ChecklistItem[], 
+    metadata: { title: string; description: string; category?: string }
+  ): Promise<ChecklistTemplate> {
+    const template: ChecklistTemplate = {
+      id: Date.now().toString(),
+      name: metadata.title,
+      description: metadata.description,
+      category: metadata.category || 'Geral',
+      items: items.map(item => ({
+        ...item,
+        status: 'pending',
+        completedAt: undefined
+      })),
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
-    return await SyncService.syncData('checklists', checklistData, 'POST');
+    this.templates.push(template);
+    return template;
   }
 
-  static async applyChecklist(templateId: string, applicationData: any) {
-    const data = {
+  // Get all templates
+  getTemplates(): ChecklistTemplate[] {
+    return this.templates;
+  }
+
+  // Get template by ID
+  getTemplateById(id: string): ChecklistTemplate | undefined {
+    return this.templates.find(t => t.id === id);
+  }
+
+  // Execute checklist
+  async executeChecklist(
+    templateId: string,
+    executedBy: string,
+    items: ChecklistItem[]
+  ): Promise<ChecklistExecution> {
+    const template = this.getTemplateById(templateId);
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    const execution: ChecklistExecution = {
+      id: Date.now().toString(),
       templateId,
-      ...applicationData,
-      timestamp: new Date().toISOString(),
-      status: 'in_progress'
+      templateName: template.name,
+      executedBy,
+      startedAt: new Date(),
+      completedAt: items.every(item => item.status !== 'pending') ? new Date() : undefined,
+      items,
+      photos: [],
+      notes: ''
     };
 
-    return await SyncService.syncData(`checklists/${templateId}/apply`, data, 'POST');
+    this.executions.push(execution);
+    return execution;
   }
 
-  static async getTemplates() {
-    return await SyncService.syncData('checklists/templates', null, 'GET');
+  // Get executions
+  getExecutions(): ChecklistExecution[] {
+    return this.executions;
   }
 
-  static async getAppliedChecklists() {
-    return await SyncService.syncData('checklists/applied', null, 'GET');
-  }
-
-  static async signChecklist(checklistId: string, signature: any) {
-    const signatureData = {
-      checklistId,
-      signature,
-      timestamp: new Date().toISOString(),
-    };
-
-    return await SyncService.syncData(`checklists/${checklistId}/sign`, signatureData, 'POST');
-  }
-
-  private static async generateHash(data: any): Promise<string> {
-    const msgBuffer = new TextEncoder().encode(JSON.stringify(data));
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  // Get executions by template
+  getExecutionsByTemplate(templateId: string): ChecklistExecution[] {
+    return this.executions.filter(e => e.templateId === templateId);
   }
 }
+
+export const ChecklistService = new ChecklistService();

@@ -8,14 +8,12 @@ import {
   CardDescription 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ChecklistItem } from '@/services/ChecklistService';
 import { InspectionPhotoUpload, InspectionPhoto } from '@/components/Inspection/InspectionPhotoUpload';
-import { Check, X, AlertCircle, Camera, Clock, User } from 'lucide-react';
+import { Check, X, AlertCircle, Camera, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

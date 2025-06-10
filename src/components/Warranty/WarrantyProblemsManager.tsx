@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Dialog,
@@ -87,6 +86,8 @@ export const WarrantyProblemsManager = ({
   const selectedProblem = problems.find(p => p.id === selectedProblemId);
   const allProblemsResolved = problems.length > 0 && problems.every(p => p.status === "resolved");
   
+  const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  
   const handleAddProblem = (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
@@ -96,7 +97,7 @@ export const WarrantyProblemsManager = ({
     const priority = (form.elements.namedItem("priority") as HTMLSelectElement).value as PriorityLevel;
     
     const newProblem: WarrantyProblem = {
-      id: uuidv4(),
+      id: generateId(),
       title,
       description,
       category,
@@ -113,7 +114,7 @@ export const WarrantyProblemsManager = ({
     
     // Add initial communication
     const initialCommunication: CommunicationHistory = {
-      id: uuidv4(),
+      id: generateId(),
       problemId: newProblem.id,
       message: `Problema "${title}" foi criado na categoria ${category} com prioridade ${priority}.`,
       author: "Sistema",
@@ -137,7 +138,7 @@ export const WarrantyProblemsManager = ({
     // Add communication for status change
     if (oldProblem && oldProblem.status !== updatedProblem.status) {
       const statusCommunication: CommunicationHistory = {
-        id: uuidv4(),
+        id: generateId(),
         problemId: updatedProblem.id,
         message: `Status alterado de "${oldProblem.status}" para "${updatedProblem.status}".`,
         author: "Sistema",
@@ -156,7 +157,7 @@ export const WarrantyProblemsManager = ({
   const handleAddExecution = (execution: Omit<ServiceExecution, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newExecution: ServiceExecution = {
       ...execution,
-      id: uuidv4(),
+      id: generateId(),
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -179,7 +180,7 @@ export const WarrantyProblemsManager = ({
 
   const addCommunication = (problemId: string, message: string) => {
     const newCommunication: CommunicationHistory = {
-      id: uuidv4(),
+      id: generateId(),
       problemId,
       message,
       author: "Usuário Atual", // Would come from auth context

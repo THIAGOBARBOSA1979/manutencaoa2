@@ -1,84 +1,77 @@
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface StatusStats {
-  critical: number;
-  pending: number;
-  progress: number;
-  complete: number;
-}
+import { 
+  AlertTriangle, 
+  Clock, 
+  CheckCircle, 
+  XCircle,
+  TrendingUp
+} from "lucide-react";
 
 interface WarrantyStatsProps {
-  stats: StatusStats;
+  stats: {
+    critical: number;
+    pending: number;
+    progress: number;
+    complete: number;
+  };
 }
 
 export const WarrantyStats = ({ stats }: WarrantyStatsProps) => {
+  const total = stats.critical + stats.pending + stats.progress + stats.complete;
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Solicitações críticas
-          </CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Críticas</CardTitle>
+          <AlertTriangle className="h-4 w-4 text-red-500" />
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2">
-            <Badge variant="destructive" className="h-8 w-8 rounded-full p-1.5 flex items-center justify-center">
-              {stats.critical}
-            </Badge>
-            <div className="text-2xl font-bold">{stats.critical}</div>
-          </div>
+          <div className="text-2xl font-bold text-red-600">{stats.critical}</div>
+          <p className="text-xs text-muted-foreground">
+            Requer atenção imediata
+          </p>
         </CardContent>
       </Card>
+
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Pendentes
-          </CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+          <Clock className="h-4 w-4 text-amber-500" />
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2">
-            <Badge variant="default" className="bg-amber-500 h-8 w-8 rounded-full p-1.5 flex items-center justify-center">
-              {stats.pending}
-            </Badge>
-            <div className="text-2xl font-bold">{stats.pending}</div>
-          </div>
+          <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
+          <p className="text-xs text-muted-foreground">
+            Aguardando atendimento
+          </p>
         </CardContent>
       </Card>
+
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Em andamento
-          </CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
+          <TrendingUp className="h-4 w-4 text-blue-500" />
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2">
-            <Badge variant="default" className="bg-blue-500 h-8 w-8 rounded-full p-1.5 flex items-center justify-center">
-              {stats.progress}
-            </Badge>
-            <div className="text-2xl font-bold">{stats.progress}</div>
-          </div>
+          <div className="text-2xl font-bold text-blue-600">{stats.progress}</div>
+          <p className="text-xs text-muted-foreground">
+            Sendo resolvidas
+          </p>
         </CardContent>
       </Card>
+
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Concluídas
-          </CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
+          <CheckCircle className="h-4 w-4 text-green-500" />
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2">
-            <Badge variant="default" className="bg-green-500 h-8 w-8 rounded-full p-1.5 flex items-center justify-center">
-              {stats.complete}
-            </Badge>
-            <div className="text-2xl font-bold">{stats.complete}</div>
-          </div>
+          <div className="text-2xl font-bold text-green-600">{stats.complete}</div>
+          <p className="text-xs text-muted-foreground">
+            {total > 0 ? Math.round((stats.complete / total) * 100) : 0}% do total
+          </p>
         </CardContent>
       </Card>
     </div>
