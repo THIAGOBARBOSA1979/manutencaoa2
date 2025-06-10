@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,20 +46,29 @@ export function ChecklistTemplates({
       items: [
         {
           id: "1",
+          text: "Verificar rachaduras nas paredes",
           description: "Estrutural: Verificar rachaduras nas paredes",
           required: true,
+          isRequired: true,
+          status: 'pending',
           evidence: []
         },
         {
           id: "2", 
+          text: "Testar funcionamento de todas as torneiras",
           description: "Hidráulica: Testar funcionamento de todas as torneiras",
           required: true,
+          isRequired: true,
+          status: 'pending',
           evidence: []
         },
         {
           id: "3",
+          text: "Verificar funcionamento de todas as tomadas",
           description: "Elétrica: Verificar funcionamento de todas as tomadas",
           required: true,
+          isRequired: true,
+          status: 'pending',
           evidence: []
         }
       ]
@@ -76,14 +84,20 @@ export function ChecklistTemplates({
       items: [
         {
           id: "4",
+          text: "Verificar possíveis infiltrações",
           description: "Estrutural: Verificar possíveis infiltrações",
           required: true,
+          isRequired: true,
+          status: 'pending',
           evidence: []
         },
         {
           id: "5",
+          text: "Verificar estado da pintura",
           description: "Acabamento: Verificar estado da pintura",
           required: false,
+          isRequired: false,
+          status: 'pending',
           evidence: []
         }
       ]
@@ -99,8 +113,11 @@ export function ChecklistTemplates({
       items: [
         {
           id: "6",
+          text: "Verificar pressão da água",
           description: "Hidráulica: Verificar pressão da água",
           required: true,
+          isRequired: true,
+          status: 'pending',
           evidence: []
         }
       ]

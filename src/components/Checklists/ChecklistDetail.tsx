@@ -21,7 +21,7 @@ interface ChecklistDetailProps {
   description: string;
   items: ChecklistItem[];
   readOnly?: boolean;
-  onItemStatusChange?: (itemId: string, status: 'ok' | 'issue' | 'na') => void;
+  onItemStatusChange?: (itemId: string, status: 'completed' | 'failed' | 'not_applicable') => void;
   onSave?: () => void;
   onBack: () => void;
 }
@@ -39,7 +39,7 @@ export const ChecklistDetail = ({
   const groupedItems = items.reduce((acc, item) => {
     // Extract category from description if it follows format "Category: Description"
     let category = "Outros";
-    const match = item.description.match(/^([^:]+):\s(.+)$/);
+    const match = item.description?.match(/^([^:]+):\s(.+)$/);
     
     if (match) {
       category = match[1];
@@ -77,9 +77,9 @@ export const ChecklistDetail = ({
             <div className="space-y-4">
               {categoryItems.map(item => {
                 // Extract just the description part after the category
-                const itemText = item.description.includes(': ') 
+                const itemText = item.description?.includes(': ') 
                   ? item.description.split(': ')[1] 
-                  : item.description;
+                  : item.description || item.text;
                 
                 return (
                   <div key={item.id} className="p-3 border rounded-md">
@@ -102,9 +102,9 @@ export const ChecklistDetail = ({
                             variant="ghost"
                             className={cn(
                               "rounded-none px-2",
-                              item.status === "ok" && "bg-green-100 text-green-800"
+                              item.status === "completed" && "bg-green-100 text-green-800"
                             )}
-                            onClick={() => onItemStatusChange(item.id, 'ok')}
+                            onClick={() => onItemStatusChange(item.id, 'completed')}
                           >
                             <Check className="h-4 w-4" />
                           </Button>
@@ -113,9 +113,9 @@ export const ChecklistDetail = ({
                             variant="ghost"
                             className={cn(
                               "rounded-none px-2",
-                              item.status === "issue" && "bg-red-100 text-red-800"
+                              item.status === "failed" && "bg-red-100 text-red-800"
                             )}
-                            onClick={() => onItemStatusChange(item.id, 'issue')}
+                            onClick={() => onItemStatusChange(item.id, 'failed')}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -124,9 +124,9 @@ export const ChecklistDetail = ({
                             variant="ghost"
                             className={cn(
                               "rounded-none px-2",
-                              item.status === "na" && "bg-gray-100 text-gray-800"
+                              item.status === "not_applicable" && "bg-gray-100 text-gray-800"
                             )}
-                            onClick={() => onItemStatusChange(item.id, 'na')}
+                            onClick={() => onItemStatusChange(item.id, 'not_applicable')}
                           >
                             N/A
                           </Button>
@@ -136,14 +136,14 @@ export const ChecklistDetail = ({
                       {readOnly && (
                         <div className={cn(
                           "px-2 py-1 text-xs font-medium rounded-md",
-                          item.status === "ok" && "bg-green-100 text-green-800",
-                          item.status === "issue" && "bg-red-100 text-red-800",
-                          item.status === "na" && "bg-gray-100 text-gray-800",
-                          !item.status && "bg-amber-100 text-amber-800"
+                          item.status === "completed" && "bg-green-100 text-green-800",
+                          item.status === "failed" && "bg-red-100 text-red-800",
+                          item.status === "not_applicable" && "bg-gray-100 text-gray-800",
+                          item.status === "pending" && "bg-amber-100 text-amber-800"
                         )}>
-                          {item.status === "ok" ? "OK" : 
-                           item.status === "issue" ? "Problema" :
-                           item.status === "na" ? "N/A" : "Pendente"}
+                          {item.status === "completed" ? "OK" : 
+                           item.status === "failed" ? "Problema" :
+                           item.status === "not_applicable" ? "N/A" : "Pendente"}
                         </div>
                       )}
                     </div>

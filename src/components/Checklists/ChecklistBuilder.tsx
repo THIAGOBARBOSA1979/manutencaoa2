@@ -52,7 +52,7 @@ export const ChecklistBuilder = ({ onSave, onCancel }: ChecklistBuilderProps) =>
   const groupedItems = items.reduce((acc, item) => {
     // Extract category from description if it follows format "Category: Description"
     let category = "Outros";
-    const match = item.description.match(/^([^:]+):\s(.+)$/);
+    const match = item.description?.match(/^([^:]+):\s(.+)$/);
     
     if (match && itemCategories.includes(match[1])) {
       category = match[1];
@@ -75,8 +75,11 @@ export const ChecklistBuilder = ({ onSave, onCancel }: ChecklistBuilderProps) =>
       
     const newItem: ChecklistItem = {
       id: uuidv4(),
+      text: newItemDescription,
       description: formattedDescription,
       required: newItemRequired,
+      isRequired: newItemRequired,
+      status: 'pending',
       evidence: []
     };
     
@@ -192,7 +195,7 @@ export const ChecklistBuilder = ({ onSave, onCancel }: ChecklistBuilderProps) =>
                               Obrigatório
                             </span>
                           )}
-                          <span>{item.description.split(': ')[1] || item.description}</span>
+                          <span>{item.text}</span>
                         </div>
                         <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(item.id)}>
                           <Trash className="h-4 w-4" />
