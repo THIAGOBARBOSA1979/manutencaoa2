@@ -20,9 +20,7 @@ import {
   BarChart, 
   Settings,
   Search,
-  Filter,
-  Grid,
-  List
+  Filter
 } from 'lucide-react';
 
 interface ChecklistTemplate {
@@ -42,7 +40,6 @@ export default function Checklist() {
   const [executionItems, setExecutionItems] = useState<ChecklistItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Mock stats data
   const statsData = {
@@ -130,53 +127,37 @@ export default function Checklist() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <FileText className="h-8 w-8 text-primary" />
-            Sistema de Checklists
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Gerencie templates, execute checklists e acompanhe análises de performance
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar checklists..."
-              className="pl-8 w-64"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              <FileText className="h-8 w-8 text-primary" />
+              Sistema de Checklists
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Gerencie templates, execute checklists e acompanhe análises de performance
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+          
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar checklists..."
+                className="pl-8 w-64"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
             <Button variant="outline" size="icon">
               <Filter className="h-4 w-4" />
             </Button>
-            <div className="flex border rounded-md">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         </div>
-      </div>
 
-      {/* Statistics Overview */}
-      <ChecklistStats {...statsData} />
+        {/* Statistics Overview */}
+        <ChecklistStats {...statsData} />
+      </div>
 
       <Tabs defaultValue="templates" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
@@ -210,33 +191,33 @@ export default function Checklist() {
               <ChecklistTemplates
                 onSelectTemplate={handleSelectTemplate}
                 onCreateNew={handleCreateNew}
+                selectedCategory={selectedCategory}
+                searchQuery={searchQuery}
               />
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="executions">
-          <div className="grid gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PlayCircle className="h-5 w-5" />
-                  Execuções Recentes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <PlayCircle className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                  <h3 className="text-lg font-semibold mb-2">Nenhuma execução registrada</h3>
-                  <p className="mb-4">Execute um checklist para ver o histórico aqui</p>
-                  <Button onClick={handleCreateNew}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Iniciar Nova Execução
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PlayCircle className="h-5 w-5" />
+                Execuções Recentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12 text-muted-foreground">
+                <PlayCircle className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                <h3 className="text-lg font-semibold mb-2">Nenhuma execução registrada</h3>
+                <p className="mb-4">Execute um checklist para ver o histórico aqui</p>
+                <Button onClick={handleCreateNew}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Iniciar Nova Execução
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="analytics">

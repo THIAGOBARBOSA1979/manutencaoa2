@@ -89,9 +89,9 @@ export function ChecklistCategories({ selectedCategory, onCategorySelect }: Chec
         <h3 className="text-lg font-semibold">Categorias</h3>
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
           <DialogTrigger asChild>
-            <Button size="sm">
+            <Button size="sm" variant="outline">
               <Plus className="h-4 w-4 mr-1" />
-              Nova Categoria
+              Nova
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -106,12 +106,12 @@ export function ChecklistCategories({ selectedCategory, onCategorySelect }: Chec
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
+      <div className="space-y-2">
         {categories.map((category) => (
           <ChecklistCategoryCard
             key={category.id}
             category={category}
-            isSelected={selectedCategory === category.id}
+            isSelected={selectedCategory === category.id || selectedCategory === category.name}
             onClick={() => onCategorySelect(category.id)}
             onEdit={handleEditCategory}
             onDelete={handleDeleteCategory}

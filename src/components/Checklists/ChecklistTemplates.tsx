@@ -1,7 +1,9 @@
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { ChecklistItem } from "@/services/ChecklistService";
 import { Plus, Search, FileText } from "lucide-react";
 import { ChecklistTemplateCard } from "./ChecklistTemplateCard";
@@ -20,11 +22,17 @@ interface ChecklistTemplate {
 interface ChecklistTemplatesProps {
   onSelectTemplate: (template: ChecklistTemplate) => void;
   onCreateNew: () => void;
+  selectedCategory?: string;
+  searchQuery?: string;
 }
 
-export function ChecklistTemplates({ onSelectTemplate, onCreateNew }: ChecklistTemplatesProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+export function ChecklistTemplates({ 
+  onSelectTemplate, 
+  onCreateNew, 
+  selectedCategory = "all",
+  searchQuery = ""
+}: ChecklistTemplatesProps) {
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
 
   // Templates predefinidos
   const templates: ChecklistTemplate[] = [
@@ -99,12 +107,17 @@ export function ChecklistTemplates({ onSelectTemplate, onCreateNew }: ChecklistT
     }
   ];
 
-  const categories = ["all", "Vistoria", "Garantia", "Manutenção"];
+  const categories = ["Todos", "Vistoria", "Garantia", "Manutenção"];
+
+  // Use search query from props or local state
+  const effectiveSearchQuery = searchQuery || localSearchQuery;
 
   const filteredTemplates = templates.filter(template => {
-    const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || template.category === selectedCategory;
+    const matchesSearch = template.name.toLowerCase().includes(effectiveSearchQuery.toLowerCase()) ||
+                         template.description.toLowerCase().includes(effectiveSearchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || 
+                           selectedCategory === "Todas as Categorias" || 
+                           template.category === selectedCategory;
     
     return matchesSearch && matchesCategory;
   });
@@ -122,39 +135,53 @@ export function ChecklistTemplates({ onSelectTemplate, onCreateNew }: ChecklistT
 
   return (
     <div className="space-y-6">
-      {/* Header com busca e filtros */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar templates..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      {/* Header com busca e ações */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex-1">
+          <h2 className="text-xl font-semibold">Templates de Checklist</h2>
+          <p className="text-muted-foreground text-sm">
+            {filteredTemplates.length} templates encontrados
+          </p>
         </div>
         
-        <div className="flex gap-2">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category === "all" ? "Todos" : category}
-            </Button>
-          ))}
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          {!searchQuery && (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar templates..."
+                className="pl-8 w-full sm:w-64"
+                value={localSearchQuery}
+                onChange={(e) => setLocalSearchQuery(e.target.value)}
+              />
+            </div>
+          )}
+          
+          <Button onClick={onCreateNew} className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Template
+          </Button>
         </div>
+      </div>
 
-        <Button onClick={onCreateNew}>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Template
-        </Button>
+      {/* Filtros por categoria */}
+      <div className="flex flex-wrap gap-2">
+        {categories.map((category) => (
+          <Badge
+            key={category}
+            variant={
+              (selectedCategory === "all" && category === "Todos") ||
+              selectedCategory === category ? "default" : "outline"
+            }
+            className="cursor-pointer"
+          >
+            {category}
+          </Badge>
+        ))}
       </div>
 
       {/* Grid de templates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredTemplates.map((template) => (
           <ChecklistTemplateCard
             key={template.id}
@@ -169,15 +196,21 @@ export function ChecklistTemplates({ onSelectTemplate, onCreateNew }: ChecklistT
       {/* Empty state */}
       {filteredTemplates.length === 0 && (
         <Card>
-          <CardContent className="p-8 text-center">
-            <FileText className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <CardContent className="p-12 text-center">
+            <FileText className="mx-auto h-16 w-16 text-muted-foreground/30" />
             <h3 className="mt-4 text-lg font-semibold">Nenhum template encontrado</h3>
-            <p className="text-muted-foreground">
-              Tente ajustar os filtros ou criar um novo template
+            <p className="text-muted-foreground mt-2">
+              {effectiveSearchQuery || selectedCategory !== "all" 
+                ? "Tente ajustar os filtros ou criar um novo template"
+                : "Crie seu primeiro template para começar"
+              }
             </p>
             <Button className="mt-4" onClick={onCreateNew}>
               <Plus className="mr-2 h-4 w-4" />
-              Criar Primeiro Template
+              {filteredTemplates.length === 0 && !effectiveSearchQuery 
+                ? "Criar Primeiro Template" 
+                : "Criar Novo Template"
+              }
             </Button>
           </CardContent>
         </Card>
